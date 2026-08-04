@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Escape of Mars - Game Universe</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background: #0f0c1b; color: #ffffff;
+            font-family: 'Press Start 2P', cursive;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 { font-size: 30px; color: #ff4500; text-shadow: 4px 4px 0px #000; margin-bottom: 15px; }
+
+        .login-box {
+            background: #181524; border: 3px solid #ff4500; padding: 15px;
+            margin-bottom: 25px; box-shadow: 4px 4px 0px #000; text-align: center;
+        }
+
+        input[type="text"] {
+            font-family: 'Press Start 2P', cursive; padding: 8px; font-size: 8px;
+            background: #0b0a10; border: 2px solid #332d4a; color: #fff; margin-right: 5px;
+        }
+
+        .btn-login {
+            font-family: 'Press Start 2P', cursive; padding: 8px 12px; font-size: 8px;
+            background: #ff4500; color: white; border: none; cursor: pointer;
+        }
+
+        .modes-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+
+        .mode-card {
+            background: #1c182d; border: 4px solid #3d355c; padding: 15px;
+            width: 180px; text-align: center; cursor: pointer; text-decoration: none; color: white;
+            box-shadow: 5px 5px 0px #000; transition: all 0.2s;
+        }
+        .mode-card:hover { transform: translate(-2px, -2px); border-color: #ff4500; }
+    </style>
+</head>
+<body>
+
+    <h1>ESCAPE OF MARS</h1>
+
+    <!-- ACCOUNT LOGIN BOX -->
+    <div class="login-box">
+        <span style="font-size: 8px; color: #aaa;">ACCOUNT LOGGED IN: </span>
+        <b id="active-user" style="color: #2a9d8f; font-size: 9px;">Guest</b>
+        <div style="margin-top: 10px;">
+            <input type="text" id="username-input" placeholder="ENTER USERNAME">
+            <button class="btn-login" onclick="saveUser()">LOGIN / SAVE</button>
+        </div>
+    </div>
+
+    <div class="modes-container">
+        <a href="arcade.html" class="mode-card">
+            <div style="font-size: 30px;">🕹️</div>
+            <div style="font-size: 10px; color: #ff4500; margin-top:10px;">ARCADE</div>
+        </a>
+
+        <a href="goldmode.html" class="mode-card">
+            <div style="font-size: 30px;">🏫</div>
+            <div style="font-size: 10px; color: #ffd700; margin-top:10px;">GOLD MODE</div>
+        </a>
+
+        <a href="summermode.html" class="mode-card">
+            <div style="font-size: 30px;">🏊‍♂️</div>
+            <div style="font-size: 10px; color: #00b4d8; margin-top:10px;">SUMMER MODE</div>
+        </a>
+
+        <a href="quests.html" class="mode-card" style="border-color: #ffd700;">
+            <div style="font-size: 30px;">📜</div>
+            <div style="font-size: 10px; color: #ffd700; margin-top:10px;">QUESTS</div>
+        </a>
+    </div>
+
+    <script>
+        function loadUser() {
+            let u = localStorage.getItem('mars_user') || "Guest";
+            document.getElementById('active-user').innerText = u;
+        }
+
+        function saveUser() {
+            let val = document.getElementById('username-input').value.trim();
+            if (val) {
+                localStorage.setItem('mars_user', val);
+                loadUser();
+                alert("Account saved as: " + val);
+            }
+        }
+        loadUser();
+    </script>
+</body>
+</html>

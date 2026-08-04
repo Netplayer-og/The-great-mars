@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Memorial Mode - 2-Player School Courtyard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background-color: #0b0a10;
+            color: #fff; font-family: 'Press Start 2P', cursive;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 { color: #ff0055; font-size: 18px; margin-bottom: 10px; text-shadow: 3px 3px 0px #000; }
+        .back-link { position: absolute; top: 15px; left: 15px; color: #aaa; text-decoration: none; font-size: 10px; }
+        .back-link:hover { color: #ff0055; }
+
+        canvas {
+            border: 4px solid #ff0055;
+            background-color: #2b1d38;
+            box-shadow: 6px 6px 0px #000;
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">⬅ MAIN MENU</a>
+    <h1>🏫 MEMORIAL MODE (2-PLAYER CO-OP)</h1>
+    <p style="font-size: 7px; color: #aaa; margin-bottom: 15px;">P1: WASD | P2: ARROW KEYS | PRESS E TO CHAT</p>
+
+    <canvas id="canvas" width="800" height="500"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const images = {};
+        const imageSources = {
+            musa: 'Pixelgame/musa.png',
+            mas: 'Pixelgame/mas.png',
+            net: 'Pixelgame/net.png',
+            wasi: 'Pixelgame/wasi.png',
+            nyx: 'Pixelgame/nyx.png',
+            timmy: 'Pixelgame/timmy.png'
+        };
+
+        for (let key in imageSources) {
+            images[key] = new Image();
+            images[key].src = imageSources[key];
+        }
+
+        // Player 1 & Player 2
+        const p1 = { x: 350, y: 350, size: 60, speed: 4, type: 'musa', name: 'P1 (Musa)' };
+        const p2 = { x: 450, y: 350, size: 60, speed: 4, type: 'mas', name: 'P2 (Mas)' };
+
+        const npcs = [
+            { type: 'wasi', x: 200, y: 150, text: "Wasi: Welcome to the Memorial School Courtyard!" },
+            { type: 'nyx', x: 280, y: 150, text: "Nyx: We made it through all quests together!" },
+            { type: 'net', x: 550, y: 150, text: "Net: This place is legendary! Best hangout ever." },
+            { type: 'timmy', x: 600, y: 320, text: "Timmy: MEMORIAL GRIDDY TIME HAHHA!" }
+        ];
+
+        let dialogueText = "";
+        let dialogueTimer = 0;
+
+        const keys = {};
+        window.addEventListener('keydown', e => {
+            keys[e.key.toLowerCase()] = true;
+            keys[e.key] = true;
+            if (e.key.toLowerCase() === 'e') checkInteraction();
+        });
+        window.addEventListener('keyup', e => {
+            keys[e.key.toLowerCase()] = false;
+            keys[e.key] = false;
+        });
+
+        function checkInteraction() {
+            npcs.forEach(npc => {
+                let dist1 = Math.hypot(p1.x - npc.x, p1.y - npc.y);
+                let dist2 = Math.hypot(p2.x - npc.x, p2.y - npc.y);
+                if (dist1 < 70 || dist2 < 70) {
+                    dialogueText = npc.text;
+                    dialogueTimer = 200;
+                }
+            });
+        }
+
+        function update() {
+            // Player 1 Controls (WASD)
+            if (keys['w']) if (p1.y > 40) p1.y -= p1.speed;
+            if (keys['s']) if (p1.y < canvas.height - 40) p1.y += p1.speed;
+            if (keys['a']) if (p1.x > 40) p1.x -= p1.speed;
+            if (keys['d']) if (p1.x < canvas.width - 40) p1.x += p1.speed;
+
+            // Player 2 Controls (Arrow Keys)
+            if (keys['ArrowUp']) if (p2.y > 40) p2.y -= p2.speed;
+            if (keys['ArrowDown']) if (p2.y < canvas.height - 40) p2.y += p2.speed;
+            if (keys['ArrowLeft']) if (p2.x > 40) p2.x -= p2.speed;
+            if (keys['ArrowRight']) if (p2.x < canvas.width - 40) p2.x += p2.speed;
+
+            if (dialogueTimer > 0) dialogueTimer--;
+        }
+
+        function drawSprite(imgKey, x, y, size) {
+            if (images[imgKey] && images[imgKey].complete && images[imgKey].naturalWidth !== 0) {
+                ctx.drawImage(images[imgKey], x - size/2, y - size/2, size, size);
+            }
+        }
+
+        function draw() {
+            // Courtyard Tile Map
+            ctx.fillStyle = "#3c2e4d";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Courtyard Fountain
+            ctx.fillStyle = "#00b4d8";
+            ctx.beginPath(); ctx.arc(400, 220, 60, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.stroke();
+
+            // Draw NPCs
+            npcs.forEach(npc => drawSprite(npc.type, npc.x, npc.y, 60));
+
+            // Draw Player 1 & Player 2
+            drawSprite(p1.type, p1.x, p1.y, 60);
+            drawSprite(p2.type, p2.x, p2.y, 60);
+
+            // Player Tags
+            ctx.fillStyle = "#ff4500"; ctx.font = "6px 'Press Start 2P'";
+            ctx.fillText("P1", p1.x - 10, p1.y - 35);
+            ctx.fillStyle = "#00b4d8";
+            ctx.fillText("P2", p2.x - 10, p2.y - 35);
+
+            // Dialogue Box
+            if (dialogueTimer > 0) {
+                ctx.fillStyle = "rgba(24, 21, 36, 0.95)";
+                ctx.fillRect(40, 410, 720, 60);
+                ctx.strokeStyle = "#ff0055";
+                ctx.lineWidth = 3;
+                ctx.strokeRect(40, 410, 720, 60);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "7px 'Press Start 2P'";
+                ctx.fillText(dialogueText, 60, 445);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    </script>
+</body>
+</html>

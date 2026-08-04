@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quests & Badges - Escape of Mars</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background: #0d0b18;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 { color: #ffd700; font-size: 20px; text-shadow: 3px 3px 0px #000; margin-bottom: 20px; }
+        .back-link { position: absolute; top: 15px; left: 15px; color: #aaa; text-decoration: none; font-size: 10px; }
+        .back-link:hover { color: #ffd700; }
+
+        .profile-box {
+            background: #181524; border: 3px solid #ffd700;
+            padding: 15px; width: 600px; margin-bottom: 20px;
+            box-shadow: 5px 5px 0px #000; text-align: center;
+        }
+
+        .quest-card {
+            background: #1f1b30; border: 3px solid #332d4a;
+            padding: 15px; width: 600px; margin-bottom: 12px;
+            box-shadow: 4px 4px 0px #000; display: flex;
+            justify-content: space-between; align-items: center;
+        }
+
+        .quest-card.completed { border-color: #2a9d8f; background: #122825; }
+        .badge { padding: 6px 10px; background: #2a9d8f; font-size: 8px; border-radius: 4px; }
+        .locked { background: #555; }
+
+        .btn-memorial {
+            display: none; background: #ff0055; color: white;
+            padding: 15px 25px; border: 3px solid #fff; font-family: 'Press Start 2P', cursive;
+            font-size: 12px; cursor: pointer; text-decoration: none; box-shadow: 5px 5px 0px #000;
+            margin-top: 15px;
+        }
+        .btn-memorial:hover { background: #d00040; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">⬅ MAIN MENU</a>
+    <h1>📜 QUESTS & PROGRESS</h1>
+
+    <div class="profile-box">
+        <p style="font-size: 10px; color: #aaa;">LOGGED IN AS:</p>
+        <p id="user-display" style="font-size: 14px; color: #2a9d8f; margin-top: 5px;"></p>
+    </div>
+
+    <!-- QUEST 1 -->
+    <div class="quest-card" id="q1-box">
+        <div>
+            <p style="font-size: 9px; color: #ff4500;">QUEST 1: ARCADE MASTER</p>
+            <p style="font-size: 7px; color: #aaa; margin-top: 6px;">BEAT ARCADE MODE 3 TIMES</p>
+            <p id="q1-progress" style="font-size: 7px; color: #ffd700; margin-top: 6px;">PROGRESS: 0 / 3 WINS</p>
+        </div>
+        <span class="badge locked" id="q1-reward">HERO: ARENA NYX</span>
+    </div>
+
+    <!-- QUEST 2 -->
+    <div class="quest-card" id="q2-box">
+        <div>
+            <p style="font-size: 9px; color: #ffd700;">QUEST 2: CLASSROOM SOCIAL</p>
+            <p style="font-size: 7px; color: #aaa; margin-top: 6px;">TALK TO ALL CLASSMATES IN GOLD MODE</p>
+        </div>
+        <span class="badge locked" id="q2-reward">SOCIAL BADGE</span>
+    </div>
+
+    <!-- QUEST 3 -->
+    <div class="quest-card" id="q3-box">
+        <div>
+            <p style="font-size: 9px; color: #00b4d8;">QUEST 3: POOL SPLASH</p>
+            <p style="font-size: 7px; color: #aaa; margin-top: 6px;">JUMP IN THE POOL IN SUMMER MODE</p>
+        </div>
+        <span class="badge locked" id="q3-reward">CHILLAX BADGE</span>
+    </div>
+
+    <!-- UNLOCK MEMORIAL MODE -->
+    <a href="memorialmode.html" id="memorial-btn" class="btn-memorial">🏆 ENTER MEMORIAL MODE! 🏆</a>
+
+    <script>
+        // Load account data from LocalStorage
+        const user = localStorage.getItem('mars_user') || "Guest";
+        document.getElementById('user-display').innerText = user;
+
+        let wins = parseInt(localStorage.getItem(user + '_arcade_wins') || '0');
+        let socialBadge = localStorage.getItem(user + '_social_badge') === 'true';
+        let chillaxBadge = localStorage.getItem(user + '_chillax_badge') === 'true';
+
+        // Quest 1
+        document.getElementById('q1-progress').innerText = `PROGRESS: ${Math.min(wins, 3)} / 3 WINS`;
+        if (wins >= 3) {
+            document.getElementById('q1-box').classList.add('completed');
+            let rw = document.getElementById('q1-reward');
+            rw.innerText = "UNLOCKED: ARENA NYX";
+            rw.classList.remove('locked');
+        }
+
+        // Quest 2
+        if (socialBadge) {
+            document.getElementById('q2-box').classList.add('completed');
+            let rw = document.getElementById('q2-reward');
+            rw.innerText = "BADGE: SOCIAL";
+            rw.classList.remove('locked');
+        }
+
+        // Quest 3
+        if (chillaxBadge) {
+            document.getElementById('q3-box').classList.add('completed');
+            let rw = document.getElementById('q3-reward');
+            rw.innerText = "BADGE: CHILLAX";
+            rw.classList.remove('locked');
+        }
+
+        // Check All Quests Completed -> Unlock Memorial Mode
+        if (wins >= 3 && socialBadge && chillaxBadge) {
+            document.getElementById('memorial-btn').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

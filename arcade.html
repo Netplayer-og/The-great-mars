@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Mode - Escape of Mars</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0a10;
+            color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #c1440e;
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0px #000;
+        }
+
+        #screen-select, #screen-gameover, #screen-win {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #181524;
+            padding: 30px;
+            border-radius: 4px;
+            border: 4px solid #332d4a;
+            box-shadow: 6px 6px 0px #000;
+        }
+
+        .char-container {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .char-card {
+            background: #252136;
+            border: 3px solid #443c60;
+            border-radius: 4px;
+            padding: 15px;
+            width: 140px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .char-card:hover {
+            transform: translateY(-4px);
+            border-color: #ff4500;
+            box-shadow: 4px 4px 0px #ff4500;
+        }
+
+        .char-preview-img {
+            width: 65px;
+            height: 65px;
+            object-fit: contain;
+            image-rendering: pixelated;
+            margin-bottom: 10px;
+        }
+
+        #game-container {
+            display: none;
+            position: relative;
+        }
+
+        canvas {
+            border: 4px solid #8b2500;
+            background-color: #2b0c03;
+            box-shadow: 6px 6px 0px #000;
+            image-rendering: pixelated;
+        }
+
+        .btn {
+            background: #ff4500;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            cursor: pointer;
+            margin-top: 15px;
+            box-shadow: 4px 4px 0px #000;
+        }
+
+        .btn:hover { background: #e03d00; }
+        .back-link { position: absolute; top: 15px; left: 15px; color: #aaa; text-decoration: none; font-size: 10px; }
+        .back-link:hover { color: #ff4500; }
+
+        /* BADGE POPUP NOTIFICATION STYLES */
+        #badge-toast {
+            position: fixed;
+            top: 20px;
+            right: -350px;
+            background: #181524;
+            border: 3px solid #ffd700;
+            box-shadow: 4px 4px 0px #000;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 999;
+            transition: right 0.4s ease-in-out;
+            border-radius: 4px;
+        }
+
+        #badge-toast.show {
+            right: 20px;
+        }
+
+        #badge-toast img {
+            width: 40px;
+            height: 40px;
+            image-rendering: pixelated;
+        }
+
+        .badge-info h4 {
+            margin: 0;
+            font-size: 8px;
+            color: #ffd700;
+        }
+
+        .badge-info p {
+            margin: 4px 0 0 0;
+            font-size: 6px;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">⬅ MAIN MENU</a>
+    <h1>ARCADE MODE</h1>
+
+    <div id="screen-select">
+        <h2 style="font-size: 14px; color: #ffd700;">CHOOSE YOUR HERO</h2>
+        <div class="char-container">
+            <div class="char-card" onclick="startGame('musa')">
+                <img src="Pixelgame/musa.png" class="char-preview-img" alt="Musa">
+                <h3 style="font-size: 10px; color: #ff4500;">lolmars</h3>
+                <p style="font-size: 6px; color: #aaa; margin-top:8px;">LASER BLASTER</p>
+            </div>
+            <div class="char-card" onclick="startGame('mas')">
+                <img src="Pixelgame/mas.png" class="char-preview-img" alt="Mas">
+                <h3 style="font-size: 10px; color: #00b4d8;">lolmas</h3>
+                <p style="font-size: 6px; color: #aaa; margin-top:8px;">PLASMA SHOTGUN</p>
+            </div>
+            <div class="char-card" onclick="startGame('net')">
+                <img src="Pixelgame/net.png" class="char-preview-img" alt="Net">
+                <h3 style="font-size: 10px; color: #2a9d8f;">net</h3>
+                <p style="font-size: 6px; color: #aaa; margin-top:8px;">WI-FI PULSE</p>
+            </div>
+            <!-- SILENT QUEST UNLOCKABLE CHARACTER -->
+            <div class="char-card" id="nyx-card" onclick="startGame('nyx')" style="opacity: 0.4; cursor: not-allowed; border-color: #333;">
+                <img src="Pixelgame/nyx.png" class="char-preview-img" alt="Nyx">
+                <h3 id="nyx-title" style="font-size: 10px; color: #555;">LOCKED</h3>
+                <p id="nyx-desc" style="font-size: 6px; color: #aaa; margin-top:8px;">WIN 3 TIMES</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="canvas" width="800" height="500"></canvas>
+    </div>
+
+    <div id="screen-gameover" style="display: none;">
+        <h2 style="color: #e63946; font-size: 18px;">YOU DIED</h2>
+        <p id="death-reason" style="font-size: 8px; margin-top: 10px; color: #aaa;"></p>
+        <button class="btn" onclick="resetToMenu()">TRY AGAIN</button>
+    </div>
+
+    <div id="screen-win" style="display: none;">
+        <h2 style="color: #2a9d8f; font-size: 18px;">VICTORY!</h2>
+        <p style="font-size: 8px; margin-top: 10px;">YOU DEFEATED THE BOSS & ESCAPED MARS!</p>
+        <button class="btn" onclick="resetToMenu()">PLAY AGAIN</button>
+    </div>
+
+    <!-- BADGE UNLOCK NOTIFICATION TOAST -->
+    <div id="badge-toast">
+        <img id="badge-icon" src="" alt="Badge">
+        <div class="badge-info">
+            <h4 id="badge-title">BADGE UNLOCKED!</h4>
+            <p id="badge-desc">You unlocked a new achievement.</p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // UNLOCK AUDIO SFX
+        const badgeAudio = new Audio('SFX/applepay.mp3');
+
+        // SILENT QUEST TRACKING SETUP
+        const user = localStorage.getItem('mars_user') || "Guest";
+        let userWins = parseInt(localStorage.getItem(user + '_arcade_wins') || '0');
+        let nyxUnlocked = userWins >= 3;
+
+        // BADGE DATA MAPPING
+        const badgeData = {
+            social: { title: "SOCIAL BUTTERFLY", desc: "Listened to Martian chatter", icon: "Pixelgame/socialbadge.png" },
+            chillax: { title: "CHILLAX CHAMP", desc: "Danced through the Fanta puddles", icon: "Pixelgame/chillaxbadge.png" },
+            victory: { title: "MARS CONQUEROR", desc: "Defeated Omega-Nyx", icon: "Pixelgame/victorybadge.png" },
+            memorial: { title: "MARTIAN MEMORIAL", desc: "Fell in battle on Mars", icon: "Pixelgame/memorialbadge.png" }
+        };
+
+        function unlockBadge(badgeKey) {
+            let userBadges = JSON.parse(localStorage.getItem(user + '_badges') || '{}');
+            if (userBadges[badgeKey]) return; // Avoid re-unlocking if already claimed
+
+            userBadges[badgeKey] = true;
+            localStorage.setItem(user + '_badges', JSON.stringify(userBadges));
+
+            // Trigger Sound and UI Popup
+            badgeAudio.currentTime = 0;
+            badgeAudio.play().catch(e => {});
+
+            let badge = badgeData[badgeKey];
+            if (badge) {
+                document.getElementById('badge-icon').src = badge.icon;
+                document.getElementById('badge-title').innerText = badge.title;
+                document.getElementById('badge-desc').innerText = badge.desc;
+
+                let toast = document.getElementById('badge-toast');
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3500);
+            }
+        }
+
+        window.onload = () => {
+            if (nyxUnlocked) {
+                let nyxCard = document.getElementById('nyx-card');
+                nyxCard.style.opacity = '1';
+                nyxCard.style.cursor = 'pointer';
+                nyxCard.style.borderColor = '#443c60';
+                document.getElementById('nyx-title').innerText = 'ARENA NYX';
+                document.getElementById('nyx-title').style.color = '#ff0055';
+                document.getElementById('nyx-desc').innerText = 'AUTO-AIM';
+            }
+        };
+
+        const images = {};
+        const imageSources = {
+            musa: 'Pixelgame/musa.png',
+            mas: 'Pixelgame/mas.png',
+            net: 'Pixelgame/net.png',
+            wasi: 'Pixelgame/wasi.png',
+            nyx: 'Pixelgame/nyx.png',
+            timmy: 'Pixelgame/timmy.png'
+        };
+
+        for (let key in imageSources) {
+            images[key] = new Image();
+            images[key].src = imageSources[key];
+        }
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            let now = audioCtx.currentTime;
+
+            if (type === 'shoot') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'hit') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.linearRampToValueAtTime(40, now + 0.12);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.12);
+                osc.start(now); osc.stop(now + 0.12);
+            } else if (type === 'dialogue') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(350 + Math.random() * 200, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
+            } else if (type === 'wave') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(500, now + 0.25);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0, now + 0.25);
+                osc.start(now); osc.stop(now + 0.25);
+            }
+        }
+
+        let player = {};
+        let keys = {};
+        let enemies = [];
+        let playerBullets = [];
+        let enemyBullets = [];
+        let fantaPuddles = [];
+        let gameLoopId;
+        let isStunned = false;
+        let stunTimer = 0;
+        let shootCooldown = 0;
+        let waveBannerTimer = 0;
+
+        let currentWave = 1;
+        let dialogueText = "";
+        let dialogueTimer = 0;
+
+        window.addEventListener('keydown', e => keys[e.key] = true);
+        window.addEventListener('keyup', e => keys[e.key] = false);
+
+        function showDialogue(text) {
+            dialogueText = text;
+            dialogueTimer = 180;
+            playSound('dialogue');
+            unlockBadge('social'); // Unlock Social Badge when seeing dialogue
+        }
+
+        function startGame(charType) {
+            if (charType === 'nyx' && !nyxUnlocked) return;
+
+            document.getElementById('screen-select').style.display = 'none';
+            document.getElementById('screen-gameover').style.display = 'none';
+            document.getElementById('screen-win').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+
+            currentWave = 1;
+
+            player = {
+                x: 80,
+                y: 250,
+                size: 32,
+                speed: 4,
+                type: charType,
+                hp: 100,
+                maxHp: 100
+            };
+
+            spawnWave(currentWave);
+
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            gameLoop();
+        }
+
+        function spawnWave(wave) {
+            playerBullets = [];
+            enemyBullets = [];
+            fantaPuddles = [];
+            isStunned = false;
+            waveBannerTimer = 120;
+
+            playSound('wave');
+            enemies = [];
+
+            if (wave === 1) {
+                enemies.push({ type: 'timmy', x: 500, y: 150, vx: 2, shootTimer: 0, hp: 40, maxHp: 40 });
+                enemies.push({ type: 'wasi', x: 400, y: 300, vy: 3, dropTimer: 0, hp: 50, maxHp: 50 });
+                showDialogue("Timmy: I HIT THE GRIDDY IN FORTNITE HAHHA!");
+            } else if (wave === 2) {
+                enemies.push({ type: 'timmy', x: 550, y: 100, vx: 2.5, shootTimer: 0, hp: 50, maxHp: 50 });
+                enemies.push({ type: 'wasi', x: 350, y: 250, vy: 3.5, dropTimer: 0, hp: 60, maxHp: 60 });
+                enemies.push({ type: 'nyx', x: 650, y: 200, isCrate: true, shiftTimer: 0, hp: 70, maxHp: 70 });
+                showDialogue("Wasi: Wanna trade on SAB bro?");
+            } else if (wave === 3) {
+                enemies.push({ type: 'timmy', x: 500, y: 80, vx: 3, shootTimer: 0, hp: 60, maxHp: 60 });
+                enemies.push({ type: 'wasi', x: 300, y: 150, vy: 4, dropTimer: 0, hp: 70, maxHp: 70 });
+                enemies.push({ type: 'nyx', x: 600, y: 120, isCrate: true, shiftTimer: 0, hp: 90, maxHp: 90 });
+                enemies.push({ type: 'nyx', x: 650, y: 380, isCrate: true, shiftTimer: 40, hp: 90, maxHp: 90 });
+                showDialogue("Nyx: Yo Wasi I got new trades for SAB!");
+            } else if (wave === 4) {
+                enemies.push({
+                    type: 'boss',
+                    x: 620,
+                    y: 250,
+                    vy: 2,
+                    attackTimer: 0,
+                    hp: 500,
+                    maxHp: 500
+                });
+                showDialogue("OMEGA-NYX: NO TRADING ALLOWED! I RULE MARS!");
+            }
+        }
+
+        function resetToMenu() {
+            document.getElementById('screen-select').style.display = 'flex';
+            document.getElementById('screen-gameover').style.display = 'none';
+            document.getElementById('screen-win').style.display = 'none';
+            document.getElementById('game-container').style.display = 'none';
+        }
+
+        function shootWeapon() {
+            if (shootCooldown > 0) return;
+            playSound('shoot');
+
+            if (player.type === 'musa') {
+                playerBullets.push({ x: player.x + 30, y: player.y, vx: 10, vy: 0, dmg: 25, color: '#ff4500' });
+                shootCooldown = 12;
+            } else if (player.type === 'mas') {
+                playerBullets.push({ x: player.x + 30, y: player.y, vx: 8, vy: -2, dmg: 14, color: '#00b4d8' });
+                playerBullets.push({ x: player.x + 30, y: player.y, vx: 9, vy: 0, dmg: 14, color: '#00b4d8' });
+                playerBullets.push({ x: player.x + 30, y: player.y, vx: 8, vy: 2, dmg: 14, color: '#00b4d8' });
+                shootCooldown = 22;
+            } else if (player.type === 'net') {
+                playerBullets.push({ x: player.x + 30, y: player.y, vx: 6, vy: 0, dmg: 40, color: '#2a9d8f', radius: 10 });
+                shootCooldown = 20;
+            } else if (player.type === 'nyx') {
+                let closest = null;
+                let minDist = Infinity;
+                enemies.forEach(e => {
+                    let dist = Math.hypot((player.x + 30) - e.x, player.y - e.y);
+                    if (dist < minDist) { minDist = dist; closest = e; }
+                });
+
+                if (closest) {
+                    let angle = Math.atan2(closest.y - player.y, closest.x - (player.x + 30));
+                    playerBullets.push({ x: player.x + 30, y: player.y, vx: Math.cos(angle) * 12, vy: Math.sin(angle) * 12, dmg: 35, color: '#ff0055', radius: 6 });
+                } else {
+                    playerBullets.push({ x: player.x + 30, y: player.y, vx: 12, vy: 0, dmg: 35, color: '#ff0055', radius: 6 });
+                }
+                shootCooldown = 15;
+            }
+        }
+
+        function update() {
+            if (shootCooldown > 0) shootCooldown--;
+            if (waveBannerTimer > 0) waveBannerTimer--;
+            if (dialogueTimer > 0) dialogueTimer--;
+
+            if (isStunned) {
+                stunTimer--;
+                if (stunTimer <= 0) isStunned = false;
+            } else {
+                if ((keys['ArrowUp'] || keys['w']) && player.y > player.size) player.y -= player.speed;
+                if ((keys['ArrowDown'] || keys['s']) && player.y < canvas.height - player.size) player.y += player.speed;
+                if ((keys['ArrowLeft'] || keys['a']) && player.x > player.size) player.x -= player.speed;
+                if ((keys['ArrowRight'] || keys['d']) && player.x < canvas.width - player.size) player.x += player.speed;
+            }
+
+            if (keys[' '] || keys['Enter']) shootWeapon();
+
+            for (let i = playerBullets.length - 1; i >= 0; i--) {
+                let pb = playerBullets[i];
+                pb.x += pb.vx;
+                pb.y += pb.vy;
+
+                for (let j = enemies.length - 1; j >= 0; j--) {
+                    let e = enemies[j];
+                    let hitRadius = e.type === 'boss' ? 60 : 30;
+                    let dist = Math.hypot(pb.x - e.x, pb.y - e.y);
+
+                    if (dist < (pb.radius || 4) + hitRadius) {
+                        e.hp -= pb.dmg;
+                        playSound('hit');
+                        playerBullets.splice(i, 1);
+                        if (e.hp <= 0) enemies.splice(j, 1);
+                        break;
+                    }
+                }
+
+                if (pb && (pb.x > canvas.width || pb.x < 0 || pb.y > canvas.height || pb.y < 0)) {
+                    playerBullets.splice(i, 1);
+                }
+            }
+
+            for (let i = enemyBullets.length - 1; i >= 0; i--) {
+                let eb = enemyBullets[i];
+                eb.x += eb.vx;
+                eb.y += eb.vy;
+
+                let dist = Math.hypot(player.x - eb.x, player.y - eb.y);
+                if (dist < player.size + (eb.radius || 4)) {
+                    player.hp -= eb.dmg || 15;
+                    playSound('hit');
+                    enemyBullets.splice(i, 1);
+                    if (player.hp <= 0) return gameOver("OVERPOWERED BY MARTIANS!");
+                }
+
+                if (eb.x < 0 || eb.x > canvas.width || eb.y < 0 || eb.y > canvas.height) {
+                    enemyBullets.splice(i, 1);
+                }
+            }
+
+            for (let p of fantaPuddles) {
+                let dist = Math.hypot(player.x - p.x, player.y - p.y);
+                if (dist < player.size + p.radius && !isStunned) {
+                    isStunned = true;
+                    stunTimer = 180;
+                    playSound('hit');
+                    unlockBadge('chillax'); // Unlock Chillax Badge when stepping into Fanta
+                }
+            }
+
+            enemies.forEach(e => {
+                if (e.type === 'timmy') {
+                    e.x += e.vx;
+                    if (e.x < 250 || e.x > 700) e.vx *= -1;
+
+                    e.shootTimer++;
+                    if (e.shootTimer > 75) {
+                        let angle = Math.atan2(player.y - e.y, player.x - e.x);
+                        enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle) * 5, vy: Math.sin(angle) * 5 });
+                        e.shootTimer = 0;
+                    }
+                }
+
+                if (e.type === 'wasi') {
+                    e.y += e.vy;
+                    if (e.y < 60 || e.y > 440) e.vy *= -1;
+
+                    e.dropTimer++;
+                    if (e.dropTimer > 100) {
+                        fantaPuddles.push({ x: e.x, y: e.y, radius: 25 });
+                        if (fantaPuddles.length > 6) fantaPuddles.shift();
+                        e.dropTimer = 0;
+                    }
+                }
+
+                if (e.type === 'nyx') {
+                    e.shiftTimer++;
+                    if (e.shiftTimer > 140) {
+                        e.isCrate = !e.isCrate;
+                        e.shiftTimer = 0;
+                    }
+
+                    let angle = Math.atan2(player.y - e.y, player.x - e.x);
+                    let speed = e.isCrate ? 0.5 : 2.4;
+                    e.x += Math.cos(angle) * speed;
+                    e.y += Math.sin(angle) * speed;
+                }
+
+                if (e.type === 'boss') {
+                    e.y += e.vy;
+                    if (e.y < 80 || e.y > 420) e.vy *= -1;
+
+                    e.attackTimer++;
+                    if (e.attackTimer % 60 === 0) {
+                        for (let angleOff of [-0.3, 0, 0.3]) {
+                            let baseAngle = Math.atan2(player.y - e.y, player.x - e.x);
+                            let finalAngle = baseAngle + angleOff;
+                            enemyBullets.push({
+                                x: e.x - 40, y: e.y,
+                                vx: Math.cos(finalAngle) * 6, vy: Math.sin(finalAngle) * 6,
+                                dmg: 18, radius: 6
+                            });
+                        }
+                    }
+                }
+
+                let hitDist = e.type === 'boss' ? 55 : 25;
+                let dist = Math.hypot(player.x - e.x, player.y - e.y);
+                if (dist < player.size + hitDist) {
+                    player.hp -= 0.6;
+                    if (player.hp <= 0) gameOver("CRUSHED BY ENEMIES!");
+                }
+            });
+
+            if (enemies.length === 0) {
+                if (currentWave < 4) {
+                    currentWave++;
+                    player.hp = Math.min(player.maxHp, player.hp + 25);
+                    spawnWave(currentWave);
+                } else {
+                    gameWin();
+                }
+            }
+        }
+
+        function drawHealthBar(x, y, width, height, current, max, color) {
+            ctx.fillStyle = "rgba(0,0,0,0.7)";
+            ctx.fillRect(x, y, width, height);
+            ctx.fillStyle = color;
+            let fillWidth = Math.max(0, (current / max) * width);
+            ctx.fillRect(x, y, fillWidth, height);
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, width, height);
+        }
+
+        function drawSprite(imgKey, x, y, size) {
+            if (images[imgKey] && images[imgKey].complete && images[imgKey].naturalWidth !== 0) {
+                ctx.drawImage(images[imgKey], x - size/2, y - size/2, size, size);
+            } else {
+                ctx.fillStyle = "#ff4500";
+                ctx.beginPath();
+                ctx.arc(x, y, size/2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = "#3a1307";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            fantaPuddles.forEach(p => {
+                ctx.fillStyle = "rgba(255, 121, 0, 0.65)";
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+            });
+
+            playerBullets.forEach(pb => {
+                ctx.fillStyle = pb.color;
+                ctx.beginPath(); ctx.arc(pb.x, pb.y, pb.radius || 5, 0, Math.PI * 2); ctx.fill();
+            });
+
+            ctx.fillStyle = "#ff0055";
+            enemyBullets.forEach(eb => {
+                ctx.beginPath(); ctx.arc(eb.x, eb.y, eb.radius || 5, 0, Math.PI * 2); ctx.fill();
+            });
+
+            // DRAW PLAYER (60px)
+            drawSprite(player.type, player.x, player.y, 60);
+
+            // DRAW ENEMIES (60px, Boss 120px)
+            enemies.forEach(e => {
+                if (e.type === 'nyx' && e.isCrate) {
+                    ctx.fillStyle = "#8d99ae";
+                    ctx.fillRect(e.x - 20, e.y - 20, 40, 40);
+                } else if (e.type === 'boss') {
+                    drawSprite('nyx', e.x, e.y, 120);
+                } else {
+                    drawSprite(e.type, e.x, e.y, 60);
+                }
+
+                if (e.type === 'boss') {
+                    drawHealthBar(200, 45, 400, 14, e.hp, e.maxHp, "#d00000");
+                } else {
+                    drawHealthBar(e.x - 25, e.y - 38, 50, 5, e.hp, e.maxHp, "#e63946");
+                }
+            });
+
+            drawHealthBar(15, 15, 160, 12, player.hp, player.maxHp, "#2a9d8f");
+            ctx.fillStyle = "#fff";
+            ctx.font = "8px 'Press Start 2P'";
+            ctx.fillText(`HP: ${Math.ceil(player.hp)}`, 20, 25);
+            ctx.fillText(currentWave === 4 ? "BOSS WAVE" : `WAVE ${currentWave}/3`, 350, 25);
+
+            if (dialogueTimer > 0) {
+                ctx.fillStyle = "rgba(24, 21, 36, 0.95)";
+                ctx.fillRect(50, 420, 700, 50);
+                ctx.strokeStyle = "#ffd700";
+                ctx.lineWidth = 2;
+                ctx.strokeRect(50, 420, 700, 50);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "7px 'Press Start 2P'";
+                ctx.fillText(dialogueText, 65, 450);
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            gameLoopId = requestAnimationFrame(gameLoop);
+        }
+
+        function gameOver(reason) {
+            cancelAnimationFrame(gameLoopId);
+            unlockBadge('memorial'); // Unlock Memorial Badge when dying
+            document.getElementById('death-reason').innerText = reason;
+            document.getElementById('screen-gameover').style.display = 'flex';
+        }
+
+        function gameWin() {
+            cancelAnimationFrame(gameLoopId);
+            
+            // SILENTLY UPDATE QUEST WINS & UNLOCK VICTORY BADGE
+            let wins = parseInt(localStorage.getItem(user + '_arcade_wins') || '0');
+            localStorage.setItem(user + '_arcade_wins', wins + 1);
+
+            unlockBadge('victory'); // Unlock Victory Badge when winning
+
+            document.getElementById('screen-win').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
