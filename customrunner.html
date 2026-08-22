@@ -27,22 +27,40 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
 
-        // Load active mod selected from Main Menu
         const activeModId = localStorage.getItem('mars_active_mod');
         const customMods = JSON.parse(localStorage.getItem('mars_custom_mods') || '[]');
         const mod = customMods.find(m => m.id === activeModId) || {
-            title: "Fallback Mode", bgColor: "#1f2937",
-            npc: { name: "Guest", talk: "No mod selected!", color: "#e11d48", x: 400, y: 250 }
+            title: "Empty Mode", template: "empty", bgColor: "#1f2937",
+            npc: { name: "Guest", sprite: "Pixelgame/musa.png", role: "neutral", talk: "Welcome!", x: 400, y: 250, vx: 2, vy: 2 }
         };
 
         document.getElementById('mode-title').innerText = mod.title.toUpperCase();
 
-        const player = { x: 100, y: 250, size: 50, speed: 4 };
-        let dialogueText = "Walk up to the character to speak!";
+        const playerImage = new Image();
+        playerImage.src = 'Pixelgame/musa.png';
+
+        const npcImage = new Image();
+        npcImage.src = mod.npc.sprite;
+
+        const player = { x: 100, y: 250, size: 50, speed: 4, hp: 100 };
+        const npc = { ...mod.npc };
+        let dialogueText = "Walk up to characters or explore!";
+        const blocks = [];
+        let lavaY = 500;
         const keys = {};
 
         window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
         window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        // Click to place blocks in Building Mode
+        canvas.addEventListener('click', e => {
+            if (mod.template === 'building') {
+                const rect = canvas.getBoundingClientRect();
+                const bx = Math.floor((e.clientX - rect.left) / 40) * 40;
+                const by = Math.floor((e.clientY - rect.top) / 40) * 40;
+                blocks.push({ x: bx, y: by });
+            }
+        });
 
         function update() {
             if ((keys['w'] || keys['arrowup']) && player.y > 30) player.y -= player.speed;
@@ -50,30 +68,87 @@
             if ((keys['a'] || keys['arrowleft']) && player.x > 30) player.x -= player.speed;
             if ((keys['d'] || keys['arrowright']) && player.x < canvas.width - 30) player.x += player.speed;
 
-            // Proximity check with custom NPC
-            let dist = Math.hypot(player.x - mod.npc.x, player.y - mod.npc.y);
-            if (dist < 60) {
-                dialogueText = mod.npc.talk;
+            // AI CHARACTER ROLES LOGIC
+            let dist = Math.hypot(player.x - npc.x, player.y - npc.y);
+
+            if (npc.role === 'enemy') {
+                if (player.x > npc.x) npc.x += 1.5;
+                if (player.x < npc.x) npc.x -= 1.5;
+                if (player.y > npc.y) npc.y += 1.5;
+                if (player.y < npc.y) npc.y -= 1.5;
+                if (dist < 40) {
+                    player.hp -= 0.5;
+                    dialogueText = "⚠️ ENEMY ATTACKING YOU!";
+                }
+            } else if (npc.role === 'team') {
+                if (dist > 60) {
+                    if (player.x > npc.x) npc.x += 2;
+                    if (player.x < npc.x) npc.x -= 2;
+                    if (player.y > npc.y) npc.y += 2;
+                    if (player.y < npc.y) npc.y -= 2;
+                }
+                if (dist < 60) dialogueText = npc.talk;
+            } else if (npc.role === 'roamer') {
+                npc.x += npc.vx;
+                npc.y += npc.vy;
+                if (npc.x < 50 || npc.x > 750) npc.vx *= -1;
+                if (npc.y < 50 || npc.y > 450) npc.vy *= -1;
+                if (dist < 60) dialogueText = npc.talk;
+            } else if (npc.role === 'neutral') {
+                if (dist < 60) dialogueText = npc.talk;
+            }
+
+            // MECHANICS TEMPLATES LOGIC
+            if (mod.template === 'lava') {
+                lavaY -= 0.2;
+                if (player.y > lavaY) {
+                    player.hp -= 1;
+                    dialogueText = "🔥 BURNING IN LAVA! GET HIGHER!";
+                }
+            }
+
+            if (player.hp <= 0) {
+                alert("GAME OVER!");
+                player.x = 100; player.y = 250; player.hp = 100; lavaY = 500;
             }
         }
 
         function draw() {
-            // Fill level custom background color
             ctx.fillStyle = mod.bgColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Custom NPC
-            ctx.fillStyle = mod.npc.color;
-            ctx.fillRect(mod.npc.x - 25, mod.npc.y - 25, 50, 50);
+            // Lava Mode Rendering
+            if (mod.template === 'lava') {
+                ctx.fillStyle = "rgba(255, 69, 0, 0.8)";
+                ctx.fillRect(0, lavaY, canvas.width, canvas.height - lavaY);
+            }
+
+            // Building Mode Blocks Rendering
+            blocks.forEach(b => {
+                ctx.fillStyle = "#8b5cf6";
+                ctx.fillRect(b.x, b.y, 40, 40);
+                ctx.strokeStyle = "#000";
+                ctx.strokeRect(b.x, b.y, 40, 40);
+            });
+
+            // Draw NPC
+            if (npcImage.complete && npcImage.naturalWidth !== 0) {
+                ctx.drawImage(npcImage, npc.x - 25, npc.y - 25, 50, 50);
+            } else {
+                ctx.fillStyle = "#e11d48";
+                ctx.fillRect(npc.x - 25, npc.y - 25, 50, 50);
+            }
+
             ctx.fillStyle = "#fff";
             ctx.font = "6px 'Press Start 2P'";
-            ctx.fillText(mod.npc.name, mod.npc.x - 25, mod.npc.y - 35);
+            ctx.fillText(npc.name + ` [${npc.role.toUpperCase()}]`, npc.x - 30, npc.y - 35);
 
             // Draw Player
-            ctx.fillStyle = "#00b4d8";
-            ctx.fillRect(player.x - player.size/2, player.y - player.size/2, player.size, player.size);
+            if (playerImage.complete && playerImage.naturalWidth !== 0) {
+                ctx.drawImage(playerImage, player.x - 25, player.y - 25, 50, 50);
+            }
 
-            // Dialogue Box
+            // HUD / Dialogue
             ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
             ctx.fillRect(50, 420, 700, 50);
             ctx.strokeStyle = "#a855f7";
@@ -83,6 +158,9 @@
             ctx.fillStyle = "#fff";
             ctx.font = "7px 'Press Start 2P'";
             ctx.fillText(dialogueText, 65, 450);
+
+            ctx.fillText(`HP: ${Math.max(0, Math.floor(player.hp))}`, 60, 30);
+            if (mod.template === 'building') ctx.fillText("CLICK TO PLACE BLOCKS", 500, 30);
         }
 
         function gameLoop() {
