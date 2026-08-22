@@ -31,12 +31,13 @@
             background: #ff4500; color: white; border: none; cursor: pointer;
         }
 
-        .modes-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+        .modes-container { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; max-width: 900px; }
 
         .mode-card {
             background: #1c182d; border: 4px solid #3d355c; padding: 15px;
             width: 180px; text-align: center; cursor: pointer; text-decoration: none; color: white;
             box-shadow: 5px 5px 0px #000; transition: all 0.2s;
+            box-sizing: border-box;
         }
         .mode-card:hover { transform: translate(-2px, -2px); border-color: #ff4500; }
     </style>
@@ -55,7 +56,8 @@
         </div>
     </div>
 
-    <div class="modes-container">
+    <!-- GAME MODES GRID CONTAINER -->
+    <div class="modes-container" id="modes-grid">
         <a href="arcade.html" class="mode-card">
             <div style="font-size: 30px;">🕹️</div>
             <div style="font-size: 10px; color: #ff4500; margin-top:10px;">ARCADE</div>
@@ -75,6 +77,12 @@
             <div style="font-size: 30px;">📜</div>
             <div style="font-size: 10px; color: #ffd700; margin-top:10px;">QUESTS</div>
         </a>
+
+        <!-- MOD MAKER / STUDIO CARD -->
+        <a href="modmaker.html" class="mode-card" style="border-color: #a855f7;">
+            <div style="font-size: 30px;">🛠️</div>
+            <div style="font-size: 10px; color: #a855f7; margin-top:10px;">MOD STUDIO</div>
+        </a>
     </div>
 
     <script>
@@ -91,7 +99,33 @@
                 alert("Account saved as: " + val);
             }
         }
+
+        // LOAD CUSTOM USER MODS AND RENDER AS CARDS
+        function loadCustomMods() {
+            const grid = document.getElementById('modes-grid');
+            const customMods = JSON.parse(localStorage.getItem('mars_custom_mods') || '[]');
+
+            customMods.forEach(mod => {
+                const card = document.createElement('a');
+                card.href = 'customrunner.html';
+                card.className = 'mode-card';
+                card.style.borderColor = '#22c55e';
+                
+                card.innerHTML = `
+                    <div style="font-size: 30px;">🎮</div>
+                    <div style="font-size: 9px; color: #22c55e; margin-top:10px;">${mod.title.toUpperCase()}</div>
+                `;
+                
+                card.onclick = () => {
+                    localStorage.setItem('mars_active_mod', mod.id);
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
         loadUser();
+        loadCustomMods();
     </script>
 </body>
 </html>
