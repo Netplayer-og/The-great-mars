@@ -100,7 +100,7 @@
             }
         }
 
-        // LOAD CUSTOM USER MODS AND RENDER AS CARDS
+        // LOAD CUSTOM USER MODS AND RENDER AS CARDS WITH EMOJI LOGO
         function loadCustomMods() {
             const grid = document.getElementById('modes-grid');
             const customMods = JSON.parse(localStorage.getItem('mars_custom_mods') || '[]');
@@ -111,8 +111,11 @@
                 card.className = 'mode-card';
                 card.style.borderColor = '#22c55e';
                 
+                // Uses custom emoji from Mod Studio, or falls back to 🎮
+                const cardEmoji = mod.emoji || "🎮";
+
                 card.innerHTML = `
-                    <div style="font-size: 30px;">🎮</div>
+                    <div style="font-size: 30px;">${cardEmoji}</div>
                     <div style="font-size: 9px; color: #22c55e; margin-top:10px;">${mod.title.toUpperCase()}</div>
                 `;
                 
