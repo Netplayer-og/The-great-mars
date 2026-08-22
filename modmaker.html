@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mod Creator - Escape of Mars</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0; padding: 20px;
+            background-color: #0b0a10; color: #fff;
+            font-family: 'Press Start 2P', cursive;
+            display: flex; flex-direction: column; align-items: center;
+        }
+
+        h1 { color: #a855f7; font-size: 20px; margin-bottom: 20px; text-shadow: 3px 3px 0px #000; }
+        .back-link { position: absolute; top: 15px; left: 15px; color: #aaa; text-decoration: none; font-size: 10px; }
+        .back-link:hover { color: #a855f7; }
+
+        .panel-container {
+            display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 900px;
+        }
+
+        .panel {
+            background: #181524; border: 3px solid #a855f7; padding: 20px;
+            box-shadow: 6px 6px 0px #000; flex: 1; min-width: 300px;
+        }
+
+        h2 { font-size: 12px; color: #c084fc; margin-top: 0; }
+        label { display: block; font-size: 8px; margin: 12px 0 6px 0; color: #aaa; }
+        
+        input, select, textarea {
+            width: 100%; padding: 10px; background: #0d0b14; border: 2px solid #332d4a;
+            color: #fff; font-family: 'Press Start 2P', cursive; font-size: 8px;
+            box-sizing: border-box; margin-bottom: 10px;
+        }
+
+        .btn {
+            display: block; width: 100%; text-align: center; background: #a855f7; color: #fff;
+            padding: 12px; font-family: 'Press Start 2P', cursive; font-size: 10px;
+            border: none; cursor: pointer; box-shadow: 4px 4px 0px #000; margin-top: 10px;
+        }
+        .btn:hover { background: #9333ea; }
+        .btn-secondary { background: #22c55e; }
+        .btn-secondary:hover { background: #16a34a; }
+
+        textarea { height: 80px; resize: none; word-break: break-all; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">⬅ MAIN MENU</a>
+    <h1>COMMUNITY MOD STUDIO</h1>
+
+    <div class="panel-container">
+        <!-- CREATE MOD FORM -->
+        <div class="panel">
+            <h2>🛠️ CREATE NEW MODE</h2>
+            
+            <label>MODE NAME:</label>
+            <input type="text" id="mod-title" placeholder="e.g. Lava Escape">
+
+            <label>BACKGROUND COLOR:</label>
+            <input type="color" id="bg-color" value="#7f1d1d">
+
+            <label>CUSTOM NPC NAME:</label>
+            <input type="text" id="npc-name" placeholder="e.g. Alien Bob">
+
+            <label>NPC DIALOGUE:</label>
+            <input type="text" id="npc-dialogue" placeholder="e.g. Watch out for lava!">
+
+            <label>NPC COLOR:</label>
+            <input type="color" id="npc-color" value="#22c55e">
+
+            <button class="btn" onclick="buildAndExportMod()">CREATE & SHARE MOD</button>
+        </div>
+
+        <!-- IMPORT / EXPORT CODE PANEL -->
+        <div class="panel">
+            <h2>📦 SHARE & IMPORT CODES</h2>
+            
+            <label>YOUR GENERATED MOD CODE:</label>
+            <textarea id="export-code" readonly placeholder="Click 'Create & Share' to get code..."></textarea>
+            <button class="btn" onclick="copyModCode()">COPY CODE TO CLIPBOARD</button>
+
+            <hr style="border-color: #332d4a; margin: 20px 0;">
+
+            <label>PASTE FRIEND'S MOD CODE HERE:</label>
+            <textarea id="import-code" placeholder="Paste mod code string here..."></textarea>
+            <button class="btn btn-secondary" onclick="importModCode()">INSTALL FRIEND'S MOD</button>
+        </div>
+    </div>
+
+    <script>
+        function buildAndExportMod() {
+            const title = document.getElementById('mod-title').value.trim() || "Custom Mode";
+            const bgColor = document.getElementById('bg-color').value;
+            const npcName = document.getElementById('npc-name').value.trim() || "Stranger";
+            const npcDialogue = document.getElementById('npc-dialogue').value.trim() || "Hello!";
+            const npcColor = document.getElementById('npc-color').value;
+
+            const modObj = {
+                id: 'mod_' + Date.now(),
+                title: title,
+                bgColor: bgColor,
+                npc: {
+                    name: npcName,
+                    talk: npcName + ": " + npcDialogue,
+                    color: npcColor,
+                    x: 400, y: 250
+                }
+            };
+
+            // Save to local custom mods array
+            saveModToStorage(modObj);
+
+            // Encode to shareable string
+            const jsonString = JSON.stringify(modObj);
+            const encodedCode = btoa(jsonString);
+            document.getElementById('export-code').value = encodedCode;
+
+            alert("Mod created and installed locally!");
+        }
+
+        function saveModToStorage(modObj) {
+            let customMods = JSON.parse(localStorage.getItem('mars_custom_mods') || '[]');
+            // Check if mod exists or update
+            customMods = customMods.filter(m => m.id !== modObj.id);
+            customMods.push(modObj);
+            localStorage.setItem('mars_custom_mods', JSON.stringify(customMods));
+        }
+
+        function copyModCode() {
+            const codeBox = document.getElementById('export-code');
+            if (!codeBox.value) return alert("Generate a code first!");
+            codeBox.select();
+            navigator.clipboard.writeText(codeBox.value);
+            alert("Mod code copied! Send this code to your friend.");
+        }
+
+        function importModCode() {
+            const rawCode = document.getElementById('import-code').value.trim();
+            if (!rawCode) return alert("Paste a mod code first!");
+
+            try {
+                const decodedJson = atob(rawCode);
+                const modObj = JSON.parse(decodedJson);
+
+                if (!modObj.title || !modObj.npc) throw new Error("Invalid Mod Format");
+
+                saveModToStorage(modObj);
+                alert(`Successfully installed "${modObj.title}"! Return to the Main Menu to play it.`);
+                document.getElementById('import-code').value = '';
+            } catch (err) {
+                alert("Invalid Mod Code! Make sure you copied the whole string.");
+            }
+        }
+    </script>
+</body>
+</html>
