@@ -3,27 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mod Creator - Escape of Mars</title>
+    <title>Mod Studio - Escape of Mars</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
         body {
-            margin: 0; padding: 20px;
-            background-color: #0b0a10; color: #fff;
-            font-family: 'Press Start 2P', cursive;
-            display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 20px; background-color: #0b0a10; color: #fff;
+            font-family: 'Press Start 2P', cursive; display: flex; flex-direction: column; align-items: center;
         }
 
         h1 { color: #a855f7; font-size: 20px; margin-bottom: 20px; text-shadow: 3px 3px 0px #000; }
         .back-link { position: absolute; top: 15px; left: 15px; color: #aaa; text-decoration: none; font-size: 10px; }
         .back-link:hover { color: #a855f7; }
 
-        .panel-container {
-            display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 900px;
-        }
+        .panel-container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 100%; max-width: 950px; }
 
         .panel {
             background: #181524; border: 3px solid #a855f7; padding: 20px;
-            box-shadow: 6px 6px 0px #000; flex: 1; min-width: 300px;
+            box-shadow: 6px 6px 0px #000; flex: 1; min-width: 320px; box-sizing: border-box;
         }
 
         h2 { font-size: 12px; color: #c084fc; margin-top: 0; }
@@ -41,43 +37,76 @@
             border: none; cursor: pointer; box-shadow: 4px 4px 0px #000; margin-top: 10px;
         }
         .btn:hover { background: #9333ea; }
-        .btn-secondary { background: #22c55e; }
-        .btn-secondary:hover { background: #16a34a; }
+        .btn-green { background: #22c55e; }
+        .btn-green:hover { background: #16a34a; }
 
-        textarea { height: 80px; resize: none; word-break: break-all; }
+        textarea { height: 70px; resize: none; word-break: break-all; }
+        .char-box { background: #0d0b14; border: 1px solid #332d4a; padding: 10px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
     <a href="index.html" class="back-link">⬅ MAIN MENU</a>
-    <h1>COMMUNITY MOD STUDIO</h1>
+    <h1>ADVANCED MOD STUDIO</h1>
 
     <div class="panel-container">
         <!-- CREATE MOD FORM -->
         <div class="panel">
-            <h2>🛠️ CREATE NEW MODE</h2>
+            <h2>🛠️ MODE MECHANICS & SETUP</h2>
             
             <label>MODE NAME:</label>
-            <input type="text" id="mod-title" placeholder="e.g. Lava Escape">
+            <input type="text" id="mod-title" placeholder="e.g. Lava Invasion">
+
+            <label>CARD EMOJI LOGO:</label>
+            <input type="text" id="mod-emoji" placeholder="e.g. 🌋, 🏗️, 💬, 🚀" value="🎮">
+
+            <label>GAME MECHANICS TEMPLATE:</label>
+            <select id="mod-template">
+                <option value="empty">Empty (Free Explore)</option>
+                <option value="lava">Lava Mode (Rising Lava / Avoid Floor)</option>
+                <option value="rp">RP Mode (Full Dialogue & Quiet Hangout)</option>
+                <option value="building">Building Mode (Click to Place Blocks)</option>
+            </select>
 
             <label>BACKGROUND COLOR:</label>
-            <input type="color" id="bg-color" value="#7f1d1d">
+            <input type="color" id="bg-color" value="#1a162b">
 
-            <label>CUSTOM NPC NAME:</label>
-            <input type="text" id="npc-name" placeholder="e.g. Alien Bob">
+            <h2>👤 CHARACTER SETUP</h2>
+            <div class="char-box">
+                <label>CHARACTER NAME:</label>
+                <input type="text" id="npc-name" placeholder="e.g. Martian Guard">
 
-            <label>NPC DIALOGUE:</label>
-            <input type="text" id="npc-dialogue" placeholder="e.g. Watch out for lava!">
+                <label>SELECT SPRITE OR UPLOAD:</label>
+                <select id="npc-sprite-select" onchange="toggleUploadInput()">
+                    <option value="Pixelgame/musa.png">Musa</option>
+                    <option value="Pixelgame/mas.png">Mas</option>
+                    <option value="Pixelgame/net.png">Net</option>
+                    <option value="Pixelgame/wasi.png">Wasi</option>
+                    <option value="Pixelgame/nyx.png">Nyx</option>
+                    <option value="Pixelgame/timmy.png">Timmy</option>
+                    <option value="UPLOAD">-- UPLOAD CUSTOM IMAGE --</option>
+                </select>
 
-            <label>NPC COLOR:</label>
-            <input type="color" id="npc-color" value="#22c55e">
+                <input type="file" id="npc-file" accept="image/*" style="display:none;">
+
+                <label>CHARACTER ROLE / AI PRIORITY:</label>
+                <select id="npc-role">
+                    <option value="enemy">Enemy (Chases & Deals Damage)</option>
+                    <option value="neutral">Neutral (Stands Still / Talks on Touch)</option>
+                    <option value="team">Team (Follows Player as Companion)</option>
+                    <option value="roamer">Roamer (Wanders Around Randomly)</option>
+                </select>
+
+                <label>DIALOGUE MESSAGE:</label>
+                <input type="text" id="npc-dialogue" placeholder="e.g. Stay back!">
+            </div>
 
             <button class="btn" onclick="buildAndExportMod()">CREATE & SHARE MOD</button>
         </div>
 
-        <!-- IMPORT / EXPORT CODE PANEL -->
+        <!-- CODES & IMPORT -->
         <div class="panel">
-            <h2>📦 SHARE & IMPORT CODES</h2>
+            <h2>📦 SHARE & IMPORT</h2>
             
             <label>YOUR GENERATED MOD CODE:</label>
             <textarea id="export-code" readonly placeholder="Click 'Create & Share' to get code..."></textarea>
@@ -87,44 +116,71 @@
 
             <label>PASTE FRIEND'S MOD CODE HERE:</label>
             <textarea id="import-code" placeholder="Paste mod code string here..."></textarea>
-            <button class="btn btn-secondary" onclick="importModCode()">INSTALL FRIEND'S MOD</button>
+            <button class="btn btn-green" onclick="importModCode()">INSTALL FRIEND'S MOD</button>
         </div>
     </div>
 
     <script>
-        function buildAndExportMod() {
+        function toggleUploadInput() {
+            const select = document.getElementById('npc-sprite-select');
+            const fileInput = document.getElementById('npc-file');
+            fileInput.style.display = select.value === 'UPLOAD' ? 'block' : 'none';
+        }
+
+        async function getSpriteData() {
+            const select = document.getElementById('npc-sprite-select');
+            if (select.value !== 'UPLOAD') {
+                return select.value;
+            }
+            const fileInput = document.getElementById('npc-file');
+            if (fileInput.files && fileInput.files[0]) {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = e => resolve(e.target.result);
+                    reader.readAsDataURL(fileInput.files[0]);
+                });
+            }
+            return 'Pixelgame/musa.png';
+        }
+
+        async function buildAndExportMod() {
             const title = document.getElementById('mod-title').value.trim() || "Custom Mode";
+            const emoji = document.getElementById('mod-emoji').value.trim() || "🎮";
+            const template = document.getElementById('mod-template').value;
             const bgColor = document.getElementById('bg-color').value;
-            const npcName = document.getElementById('npc-name').value.trim() || "Stranger";
+
+            const npcName = document.getElementById('npc-name').value.trim() || "Npc";
+            const npcSprite = await getSpriteData();
+            const npcRole = document.getElementById('npc-role').value;
             const npcDialogue = document.getElementById('npc-dialogue').value.trim() || "Hello!";
-            const npcColor = document.getElementById('npc-color').value;
 
             const modObj = {
                 id: 'mod_' + Date.now(),
                 title: title,
+                emoji: emoji,
+                template: template,
                 bgColor: bgColor,
                 npc: {
                     name: npcName,
+                    sprite: npcSprite,
+                    role: npcRole,
                     talk: npcName + ": " + npcDialogue,
-                    color: npcColor,
-                    x: 400, y: 250
+                    x: 400, y: 250,
+                    vx: 2, vy: 2
                 }
             };
 
-            // Save to local custom mods array
             saveModToStorage(modObj);
 
-            // Encode to shareable string
             const jsonString = JSON.stringify(modObj);
-            const encodedCode = btoa(jsonString);
+            const encodedCode = btoa(encodeURIComponent(jsonString));
             document.getElementById('export-code').value = encodedCode;
 
-            alert("Mod created and installed locally!");
+            alert("Mod created and installed!");
         }
 
         function saveModToStorage(modObj) {
             let customMods = JSON.parse(localStorage.getItem('mars_custom_mods') || '[]');
-            // Check if mod exists or update
             customMods = customMods.filter(m => m.id !== modObj.id);
             customMods.push(modObj);
             localStorage.setItem('mars_custom_mods', JSON.stringify(customMods));
@@ -135,24 +191,24 @@
             if (!codeBox.value) return alert("Generate a code first!");
             codeBox.select();
             navigator.clipboard.writeText(codeBox.value);
-            alert("Mod code copied! Send this code to your friend.");
+            alert("Mod code copied!");
         }
 
         function importModCode() {
             const rawCode = document.getElementById('import-code').value.trim();
-            if (!rawCode) return alert("Paste a mod code first!");
+            if (!rawCode) return alert("Paste a code first!");
 
             try {
-                const decodedJson = atob(rawCode);
+                const decodedJson = decodeURIComponent(atob(rawCode));
                 const modObj = JSON.parse(decodedJson);
 
-                if (!modObj.title || !modObj.npc) throw new Error("Invalid Mod Format");
+                if (!modObj.title || !modObj.template) throw new Error("Invalid Mod");
 
                 saveModToStorage(modObj);
-                alert(`Successfully installed "${modObj.title}"! Return to the Main Menu to play it.`);
+                alert(`Installed "${modObj.title}"!`);
                 document.getElementById('import-code').value = '';
             } catch (err) {
-                alert("Invalid Mod Code! Make sure you copied the whole string.");
+                alert("Invalid Mod Code!");
             }
         }
     </script>
