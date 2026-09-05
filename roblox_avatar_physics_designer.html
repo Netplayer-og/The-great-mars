@@ -1,162 +1,346 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Roblox Avatar Physics Designer</title>
-<style>
-  *{box-sizing:border-box} body{margin:0;background:#17191f;color:#fff;font-family:Arial,sans-serif;overflow:hidden}
-  #app{display:flex;height:100vh}
-  #left{width:330px;background:#22252d;padding:16px;border-right:1px solid #3a3e48;overflow:auto}
-  h1{font-size:20px;margin:0 0 14px}.section{margin:14px 0}.section h2{font-size:13px;color:#aeb5c2;margin:0 0 8px;text-transform:uppercase}
-  button{border:0;border-radius:8px;padding:9px 11px;background:#343944;color:white;cursor:pointer;margin:3px}
-  button:hover{background:#454b59}.primary{background:#2f7df6}.danger{background:#d94b4b}
-  #items{display:grid;grid-template-columns:1fr 1fr;gap:6px}.item{background:#2b2f38;padding:10px;border-radius:9px;cursor:grab;border:1px solid #3a3f4b}
-  .item:active{cursor:grabbing}.swatch{width:28px;height:28px;border-radius:6px;display:inline-block;vertical-align:middle;margin-right:7px;border:1px solid #777}
-  label{font-size:12px;color:#c5cad4;display:block;margin:9px 0 4px}
-  input[type=range]{width:100%} select{width:100%;padding:8px;background:#30343e;color:#fff;border:1px solid #484e5b;border-radius:7px}
-  #stageWrap{flex:1;position:relative;background:#101217} canvas{display:block;width:100%;height:100%}
-  #hint{position:absolute;left:16px;top:14px;background:#222731dd;padding:9px 12px;border-radius:8px;font-size:12px;color:#cbd0da}
-  #count{position:absolute;right:16px;top:14px;background:#222731dd;padding:9px 12px;border-radius:8px;font-size:12px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Sandbox Game</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Side Control Panel */
+        #sidebar {
+            width: 280px;
+            background-color: #1e1e1e;
+            border-right: 2px solid #333;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+        h2 {
+            font-size: 1.4rem;
+            color: #bb86fc;
+            border-bottom: 2px solid #333;
+            padding-bottom: 8px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-size: 0.9rem;
+            color: #b0b0b0;
+        }
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        button {
+            padding: 10px;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #3d3d3d;
+            border-color: #bb86fc;
+        }
+        button.active {
+            background-color: #bb86fc;
+            color: #121212;
+            border-color: #bb86fc;
+        }
+        input[type="color"] {
+            -webkit-appearance: none;
+            border: none;
+            width: 100%;
+            height: 40px;
+            border-radius: 6px;
+            cursor: pointer;
+            background: none;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #444;
+            border-radius: 6px;
+        }
+        .danger-btn {
+            background-color: #cf6679;
+            color: #121212;
+            border: none;
+        }
+        .danger-btn:hover {
+            background-color: #e48596;
+        }
+        .instructions {
+            font-size: 0.8rem;
+            color: #888;
+            line-height: 1.4;
+            margin-top: auto;
+            background: #252525;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        /* Canvas Container */
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #1e1e1e 0%, #0a0a0a 100%);
+        }
+        canvas {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-  <aside id="left">
-    <h1>🧍 Roblox Avatar Designer</h1>
-    <div class="section">
-      <h2>Add parts</h2>
-      <div id="items"></div>
-    </div>
-    <div class="section">
-      <h2>Physics</h2>
-      <button class="primary" onclick="dropAvatar()">Drop Avatar</button>
-      <button onclick="addFloor()">Add Floor</button>
-      <button onclick="resetScene()">Reset</button>
-      <label>Gravity</label><input id="gravity" type="range" min="0" max="2" step=".05" value="1">
-      <label>Bounciness</label><input id="bounce" type="range" min="0" max="1" step=".05" value=".35">
-    </div>
-    <div class="section">
-      <h2>Selected part</h2>
-      <div id="selectedText">Nothing selected</div>
-      <label>Color</label><input id="color" type="color" value="#f7c59f">
-      <label>Size</label><input id="size" type="range" min=".5" max="2.5" step=".05" value="1">
-      <button class="danger" onclick="removeSelected()">Remove</button>
-    </div>
-    <div class="section">
-      <h2>Controls</h2>
-      <div style="font-size:12px;line-height:1.6;color:#aeb5c2">
-        Drag a part into the box to add it.<br>
-        Drag parts around before dropping.<br>
-        Click a part to select it.<br>
-        <b>Space</b> = drop • <b>R</b> = reset.
-      </div>
-    </div>
-  </aside>
-  <main id="stageWrap">
-    <canvas id="canvas"></canvas>
-    <div id="hint">Drop parts into the box • Build your avatar!</div>
-    <div id="count">0 parts</div>
-  </main>
-</div>
 
-<script>
-const canvas=document.getElementById("canvas"),ctx=canvas.getContext("2d");
-let W,H,parts=[],selected=null,dragging=null,dragOff={x:0,y:0},running=true,gravity=0.45;
-let floorY=0;
+    <div id="sidebar">
+        <h2>Physics Sandbox</h2>
+        
+        <div class="control-group">
+            <label>Shape Tool</label>
+            <div class="btn-grid">
+                <button id="btn-box" class="active" onclick="setShape('box')">Box</button>
+                <button id="btn-circle" onclick="setShape('circle')">Circle</button>
+            </div>
+        </div>
 
-const catalog=[
- ["Head","#f7c59f","head"],["Torso","#3f72af","torso"],["Left Arm","#f7c59f","arm"],
- ["Right Arm","#f7c59f","arm"],["Left Leg","#242424","leg"],["Right Leg","#242424","leg"],
- ["Hat","#20242c","hat"],["Hair","#5a3825","hair"],["Accessory","#f2c94c","accessory"]
-];
+        <div class="control-group">
+            <label>Object Color</label>
+            <input type="color" id="colorPicker" value="#03dac6">
+        </div>
 
-function resize(){W=canvas.width=canvas.clientWidth*devicePixelRatio;H=canvas.height=canvas.clientHeight*devicePixelRatio;ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);W=canvas.clientWidth;H=canvas.clientHeight;floorY=H-45}
-addEventListener("resize",resize);resize();
+        <div class="control-group">
+            <label>Environment</label>
+            <button id="btn-gravity" onclick="toggleGravity()">Toggle Gravity: ON</button>
+        </div>
 
-const items=document.getElementById("items");
-catalog.forEach(([name,color,type])=>{
- const d=document.createElement("div");d.className="item";d.draggable=true;
- d.innerHTML=`<span class="swatch" style="background:${color}"></span>${name}`;
- d.addEventListener("dragstart",e=>e.dataTransfer.setData("part",JSON.stringify({name,color,type})));
- items.appendChild(d);
-});
-canvas.addEventListener("dragover",e=>e.preventDefault());
-canvas.addEventListener("drop",e=>{
- e.preventDefault();let p=JSON.parse(e.dataTransfer.getData("part"));let r=canvas.getBoundingClientRect();
- addPart(p,e.clientX-r.left,e.clientY-r.top);
-});
-function addPart(p,x=W/2,y=100){
- const o={...p,x,y,vx:0,vy:0,angle:0,va:(Math.random()-.5)*.08,size:1,ground:false};
- parts.push(o);selected=o;updateUI();
-}
-function dims(p){
- let s=34*p.size;
- if(p.type==="torso")return [s*1.45,s*1.7];
- if(p.type==="head")return [s*1.25,s*1.25];
- if(p.type==="arm")return [s*.65,s*1.55];
- if(p.type==="leg")return [s*.7,s*1.7];
- if(p.type==="hat"||p.type==="hair")return [s*1.45,s*.65];
- return [s,s];
-}
-function roundedRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill()}
-function drawPart(p){
- let [w,h]=dims(p);ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.angle);
- ctx.fillStyle=p.color;
- if(p.type==="head"){roundedRect(-w/2,-h/2,w,h,5);ctx.fillStyle="#222";ctx.fillRect(-w*.27,-h*.08,5,5);ctx.fillRect(w*.15,-h*.08,5,5)}
- else if(p.type==="hat"){roundedRect(-w/2,-h/2,w,h,5);ctx.fillStyle="#111";ctx.fillRect(-w*.62,h*.3,w*1.24,4)}
- else if(p.type==="hair"){roundedRect(-w/2,-h/2,w,h,7)}
- else {roundedRect(-w/2,-h/2,w,h,3)}
- if(selected===p){ctx.strokeStyle="#65a3ff";ctx.lineWidth=2;ctx.strokeRect(-w/2-3,-h/2-3,w+6,h+6)}
- ctx.restore();
-}
-function drawBox(){
- const x=55,y=45,w=W-110,h=H-90;
- ctx.fillStyle="#1c2028";ctx.strokeStyle="#707786";ctx.lineWidth=3;
- ctx.fillRect(x,y,w,h);ctx.strokeRect(x,y,w,h);
- ctx.fillStyle="#292e38";ctx.fillRect(x,y,w,10);
- ctx.fillStyle="#15181e";ctx.fillRect(x,floorY,w,45);
- ctx.strokeStyle="#4b5361";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,floorY);ctx.lineTo(x+w,floorY);ctx.stroke();
-}
-function loop(){
- ctx.clearRect(0,0,W,H);drawBox();
- if(running){
-  gravity=.45*+document.getElementById("gravity").value;
-  parts.forEach(p=>{
-   if(p===dragging)return;
-   p.vy+=gravity;p.x+=p.vx;p.y+=p.vy;p.angle+=p.va;
-   let [w,h]=dims(p),minX=55+w/2,maxX=W-55-w/2;
-   if(p.x<minX){p.x=minX;p.vx*=-.65}
-   if(p.x>maxX){p.x=maxX;p.vx*=-.65}
-   if(p.y+h/2>floorY){p.y=floorY-h/2;p.vy*=-(+document.getElementById("bounce").value);p.vx*=.98;if(Math.abs(p.vy)<.35)p.vy=0}
-  });
- }
- parts.forEach(drawPart);requestAnimationFrame(loop);
-}
-function pointer(e){
- const r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}
-}
-canvas.addEventListener("pointerdown",e=>{
- const q=pointer(e);selected=null;
- for(let i=parts.length-1;i>=0;i--){let p=parts[i],[w,h]=dims(p);
-  if(Math.abs(q.x-p.x)<w/2+5&&Math.abs(q.y-p.y)<h/2+5){selected=p;dragging=p;dragOff={x:q.x-p.x,y:q.y-p.y};canvas.setPointerCapture(e.pointerId);break}
- }updateUI();
-});
-canvas.addEventListener("pointermove",e=>{if(!dragging)return;let q=pointer(e);dragging.x=q.x-dragOff.x;dragging.y=q.y-dragOff.y;dragging.vx=dragging.vy=0});
-canvas.addEventListener("pointerup",e=>{if(dragging){dragging.vx=0;dragging.vy=0;dragging=null}});
-function dropAvatar(){parts.forEach((p,i)=>{p.x=W/2+(i%3-1)*65;p.y=80+Math.floor(i/3)*65;p.vx=(Math.random()-.5)*3;p.vy=0;p.ground=false});running=true}
-function addFloor(){floorY=H-45}
-function resetScene(){parts=[];selected=null;updateUI()}
-function removeSelected(){if(!selected)return;parts=parts.filter(p=>p!==selected);selected=null;updateUI()}
-function updateUI(){
- document.getElementById("count").textContent=parts.length+" part"+(parts.length===1?"":"s");
- document.getElementById("selectedText").textContent=selected?selected.name:"Nothing selected";
- if(selected){document.getElementById("color").value=selected.color;document.getElementById("size").value=selected.size}
-}
-document.getElementById("color").oninput=e=>{if(selected){selected.color=e.target.value}};
-document.getElementById("size").oninput=e=>{if(selected){selected.size=+e.target.value}};
-addEventListener("keydown",e=>{if(e.code==="Space"){e.preventDefault();dropAvatar()}if(e.key.toLowerCase()==="r")resetScene()});
-loop();
-</script>
+        <div class="control-group">
+            <label>Actions</label>
+            <button class="danger-btn" onclick="clearWorld()">Clear All Objects</button>
+        </div>
+
+        <div class="instructions">
+            <strong>How to play:</strong><br>
+            • Click & Drag anywhere on the canvas to spawn and <strong>throw</strong> objects with momentum.<br>
+            • Click existing objects to give them a sudden impulse kick!
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script>
+        // Module aliases
+        const { Engine, Render, Runner, Bodies, Composite, Constraint, Mouse, MouseConstraint, Vector, Events } = Matter;
+
+        // Create an engine
+        const engine = Engine.create();
+        const world = engine.world;
+
+        // Get container dimensions
+        const container = document.getElementById('canvas-container');
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        // Create a renderer
+        const render = Render.create({
+            element: container,
+            engine: engine,
+            options: {
+                width: width,
+                height: height,
+                wireframes: false,
+                background: 'transparent'
+            }
+        });
+
+        Render.run(render);
+        const runner = Runner.create();
+        Runner.run(runner, engine);
+
+        // Add Boundaries (Walls, Floor, Ceiling)
+        const wallThickness = 50;
+        const ground = Bodies.rectangle(width / 2, height + wallThickness / 2, width, wallThickness, { isStatic: true, render: { fillStyle: '#222' } });
+        const leftWall = Bodies.rectangle(-wallThickness / 2, height / 2, wallThickness, height, { isStatic: true, render: { fillStyle: '#222' } });
+        const rightWall = Bodies.rectangle(width + wallThickness / 2, height / 2, wallThickness, height, { isStatic: true, render: { fillStyle: '#222' } });
+        const ceiling = Bodies.rectangle(width / 2, -wallThickness / 2, width, wallThickness, { isStatic: true, render: { fillStyle: '#222' } });
+        
+        Composite.add(world, [ground, leftWall, rightWall, ceiling]);
+
+        // --- State Management ---
+        let currentShape = 'box';
+        let gravityEnabled = true;
+
+        function setShape(shape) {
+            currentShape = shape;
+            document.getElementById('btn-box').classList.remove('active');
+            document.getElementById('btn-circle').classList.remove('active');
+            document.getElementById(`btn-${shape}`).classList.add('active');
+            playSound('click');
+        }
+
+        function toggleGravity() {
+            gravityEnabled = !gravityEnabled;
+            engine.world.gravity.y = gravityEnabled ? 1 : 0;
+            const btn = document.getElementById('btn-gravity');
+            btn.innerText = `Toggle Gravity: ${gravityEnabled ? 'ON' : 'OFF'}`;
+            btn.classList.toggle('active', gravityEnabled);
+            playSound('click');
+        }
+
+        function clearWorld() {
+            // Keep the boundaries (first 4 elements)
+            const bodies = Composite.allBodies(world);
+            const toRemove = bodies.slice(4);
+            Composite.remove(world, toRemove);
+            playSound('clear');
+        }
+
+        // --- Web Audio API (Sound System) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'spawn') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'bounce') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
+                gainNode.gain.setValueAtTime(0.08, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            } else if (type === 'clear') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.2);
+                gainNode.gain.setValueAtTime(0.15, now);
+                gainNode.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+        }
+
+        // Add collision sound trigger
+        Events.on(engine, 'collisionStart', (event) => {
+            event.pairs.forEach((pair) => {
+                // Play bounce sound if impact speed is high enough
+                const speed = Vector.magnitude(Vector.sub(pair.bodyA.velocity, pair.bodyB.velocity));
+                if (speed > 2) {
+                    playSound('bounce');
+                }
+            });
+        });
+
+        // --- Throw / Spawn Mechanics via Mouse Interaction ---
+        let isMouseDown = false;
+        let startPoint = null;
+
+        const canvasEl = render.canvas;
+
+        canvasEl.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            startPoint = { x: e.offsetX, y: e.offsetY };
+        });
+
+        canvasEl.addEventListener('mouseup', (e) => {
+            if (!isMouseDown) return;
+            isMouseDown = false;
+            
+            const endPoint = { x: e.offsetX, y: e.offsetY };
+            
+            // Calculate drag distance / vector for throwing velocity
+            const throwVector = {
+                x: (startPoint.x - endPoint.x) * 0.15,
+                y: (startPoint.y - endPoint.y) * 0.15
+            };
+
+            const color = document.getElementById('colorPicker').value;
+            let body;
+
+            if (currentShape === 'box') {
+                const size = 40 + Math.random() * 30;
+                body = Bodies.rectangle(startPoint.x, startPoint.y, size, size, {
+                    render: { fillStyle: color },
+                    restitution: 0.6,
+                    friction: 0.1
+                });
+            } else {
+                const radius = 20 + Math.random() * 20;
+                body = Bodies.circle(startPoint.x, startPoint.y, radius, {
+                    render: { fillStyle: color },
+                    restitution: 0.7,
+                    friction: 0.1
+                });
+            }
+
+            // Apply velocity throw effect
+            Matter.Body.setVelocity(body, throwVector);
+            Composite.add(world, body);
+            playSound('spawn');
+        });
+
+        // Handle window resizing gracefully
+        window.addEventListener('resize', () => {
+            const newWidth = container.clientWidth;
+            const newHeight = container.clientHeight;
+            
+            render.options.width = newWidth;
+            render.options.height = newHeight;
+            Render.setPixelRatio(render, window.devicePixelRatio);
+            
+            // Reposition boundaries
+            Matter.Body.setPosition(ground, { x: newWidth / 2, y: newHeight + wallThickness / 2 });
+            Matter.Body.setScale(ground, newWidth / width, 1);
+            
+            Matter.Body.setPosition(rightWall, { x: newWidth + wallThickness / 2, y: newHeight / 2 });
+            Matter.Body.setScale(rightWall, 1, newHeight / height);
+        });
+    </script>
 </body>
 </html>
