@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows Gangsters Edition</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+        }
+
+        /* Desktop Background */
+        #desktop {
+            width: 100%;
+            height: calc(100vh - 45px);
+            background: linear-gradient(135deg, #0b0f19 0%, #1a0b2e 50%, #0b1a19 100%);
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            align-content: flex-start;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Desktop Icons */
+        .desktop-icon {
+            width: 80px;
+            height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: background 0.1s;
+        }
+        .desktop-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .desktop-icon span {
+            font-size: 2rem;
+        }
+        .desktop-icon label {
+            font-size: 0.75rem;
+            color: #fff;
+            text-align: center;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        /* Taskbar */
+        #taskbar {
+            width: 100%;
+            height: 45px;
+            background: #111;
+            border-top: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            gap: 10px;
+            position: relative;
+            z-index: 1000;
+        }
+        #start-btn {
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            border: none;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+        #start-btn:hover {
+            filter: brightness(1.1);
+        }
+
+        .taskbar-info {
+            margin-left: auto;
+            color: #aaa;
+            font-size: 0.85rem;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        /* Start Menu (Race Track Concept) */
+        #start-menu {
+            position: absolute;
+            bottom: 50px;
+            left: 10px;
+            width: 380px;
+            height: 450px;
+            background: rgba(20, 20, 25, 0.95);
+            border: 2px solid #0072ff;
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            display: none;
+            flex-direction: column;
+            z-index: 999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+        .start-menu-header {
+            background: linear-gradient(90deg, #0072ff, #9900ff);
+            padding: 10px 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+        }
+        .race-track-grid {
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            overflow-y: auto;
+            flex-grow: 1;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(255,255,255,0.02),
+                rgba(255,255,255,0.02) 40px,
+                transparent 40px,
+                transparent 80px
+            );
+        }
+        .race-app-card {
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.1s;
+        }
+        .race-app-card:hover {
+            transform: scale(1.05);
+            background: rgba(0, 114, 255, 0.3);
+            border-color: #0072ff;
+        }
+        .race-app-card span {
+            font-size: 1.8rem;
+            margin-bottom: 4px;
+        }
+        .race-app-card label {
+            font-size: 0.7rem;
+            color: #ddd;
+            pointer-events: none;
+        }
+
+        /* Generic Windows Window */
+        .window {
+            position: absolute;
+            top: 100px;
+            left: 150px;
+            width: 420px;
+            background: #18181b;
+            border: 1px solid #3f3f46;
+            border-radius: 6px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+            overflow: hidden;
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .window-titlebar {
+            background: #27272a;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #f4f4f5;
+            font-size: 0.85rem;
+            font-weight: bold;
+            cursor: move;
+        }
+        .window-controls {
+            display: flex;
+            gap: 6px;
+        }
+        .window-controls button {
+            background: #3f3f46;
+            border: none;
+            color: #fff;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .window-controls button.close-btn:hover {
+            background: #ef4444;
+        }
+        .window-content {
+            padding: 20px;
+            color: #d4d4d8;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        /* Popup Specific Style */
+        .popup-window {
+            border-color: #ef4444;
+        }
+        .popup-window .window-titlebar {
+            background: #991b1b;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Desktop Area -->
+    <div id="desktop" onclick="closeStartMenu(event)">
+        <!-- Desktop Shortcuts -->
+        <div class="desktop-icon" ondblclick="openApp('Notepad Gangster')">
+            <span>📝</span>
+            <label>Notes.exe</label>
+        </div>
+        <div class="desktop-icon" ondblclick="openApp('Virus Generator')">
+            <span>☣️</span>
+            <label>TotallyRealAntivirus.bat</label>
+        </div>
+        <div class="desktop-icon" ondblclick="openApp('Roblox Physics')">
+            <span>🧱</span>
+            <label>Roblox Physics</label>
+        </div>
+    </div>
+
+    <!-- Taskbar -->
+    <div id="taskbar">
+        <button id="start-btn" onclick="toggleStartMenu(event)">🏁 START RACE</button>
+        <div class="taskbar-info">
+            <span id="popup-timer">Next Popup: 20s</span>
+            <span id="clock">12:00 AM</span>
+        </div>
+    </div>
+
+    <!-- Start Menu (Race Track) -->
+    <div id="start-menu" onclick="event.stopPropagation()">
+        <div class="start-menu-header">
+            <span>🏎️ Windows Gangsters App Speedway</span>
+            <span>GO!</span>
+        </div>
+        <div class="race-track-grid">
+            <div class="race-app-card" onclick="openApp('Notepad Gangster')">
+                <span>📝</span>
+                <label>Gangster Notes</label>
+            </div>
+            <div class="race-app-card" onclick="openApp('Roblox Physics')">
+                <span>🧱</span>
+                <label>Roblox Physics</label>
+            </div>
+            <div class="race-app-card" onclick="openApp('Robux Vomit')">
+                <span>🤮</span>
+                <label>Robux Vomit</label>
+            </div>
+            <div class="race-app-card" onclick="openApp('Trojan Horse')">
+                <span>🐴</span>
+                <label>Trojan.exe</label>
+            </div>
+            <div class="race-app-card" onclick="openApp('Gangster Calculator')">
+                <span>🧮</span>
+                <label>Street Math</label>
+            </div>
+            <div class="race-app-card" onclick="openApp('Meme Generator')">
+                <span>🤡</span>
+                <label>Meme Maker</label>
+            </div>
+            <div class="race-app-card" onclick="openApp('Free VBucks')">
+                <span>💎</span>
+                <label>Free VBucks</label>
+            </div>
+            <div class="race-app-card" onclick="openApp('System Crash')">
+                <span>💥</span>
+                <label>Delete System</label>
+            </div>
+            <div class="race-app-card" onclick="openApp('Task Manager')">
+                <span>📊</span>
+                <label>Task Manager</label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const desktop = document.getElementById('desktop');
+        const startMenu = document.getElementById('start-menu');
+        let windowZIndex = 100;
+
+        // Clock update
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }, 1000);
+
+        // Toggle Start Menu
+        function toggleStartMenu(e) {
+            e.stopPropagation();
+            startMenu.style.display = startMenu.style.display === 'flex' ? 'none' : 'flex';
+            playSound('click');
+        }
+
+        function closeStartMenu(e) {
+            startMenu.style.display = 'none';
+        }
+
+        // --- Web Audio Sound Engine ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'popup') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(150, now + 0.2);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(450, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
+            }
+        }
+
+        // --- Window Manager ---
+        function createWindow(title, contentHTML, isPopup = false) {
+            const win = document.createElement('div');
+            win.className = 'window' + (isPopup ? ' popup-window' : '');
+            win.style.zIndex = ++windowZIndex;
+            
+            // Random offset for popups or apps
+            const randomX = 50 + Math.random() * (window.innerWidth - 500);
+            const randomY = 50 + Math.random() * (window.innerHeight - 400);
+            win.style.left = randomX + 'px';
+            win.style.top = randomY + 'px';
+
+            win.innerHTML = `
+                <div class="window-titlebar">
+                    <span>${title}</span>
+                    <div class="window-controls">
+                        <button class="close-btn" onclick="this.closest('.window').remove()">✕</button>
+                    </div>
+                </div>
+                <div class="window-content">
+                    ${contentHTML}
+                </div>
+            `;
+
+            // Make draggable
+            const titlebar = win.querySelector('.window-titlebar');
+            let isDragging = false, startX, startY;
+            titlebar.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX - win.offsetLeft;
+                startY = e.clientY - win.offsetTop;
+                win.style.zIndex = ++windowZIndex;
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                win.style.left = (e.clientX - startX) + 'px';
+                win.style.top = (e.clientY - startY) + 'px';
+            });
+            document.addEventListener('mouseup', () => isDragging = false);
+
+            desktop.appendChild(win);
+            startMenu.style.display = 'none';
+        }
+
+        // --- Open Apps Logic ---
+        function openApp(appName) {
+            playSound('click');
+            if (appName === 'Notepad Gangster') {
+                createWindow('Notepad Gangster - running.exe', '<textarea style="width:100%; height:200px; background:#111; color:#0f0; border:1px solid #333; padding:10px; font-family:monospace;" placeholder="Type your gangster confession here..."></textarea>');
+            } else if (appName === 'Roblox Physics') {
+                createWindow('Roblox Physics Simulator', '<p>🧱 Spawning virtual physics blocks...</p><button onclick="alert(\'Block dropped! Gravity intact.\')" style="margin-top:10px; padding:8px 12px; background:#2563eb; border:none; color:white; border-radius:4px; cursor:pointer;">Spawn Brick</button>');
+            } else if (appName === 'Robux Vomit') {
+                createWindow('Robux Vomit Generator', '<p style="color:#fbbf24;">🤮 <strong>WARNING:</strong> Too much free robux detected!</p><h2 style="margin-top:10px; color:#34d399;">+99,999,999 Robux Added!</h2>');
+            } else if (appName === 'Trojan Horse' || appName === 'Virus Generator') {
+                createWindow('System Warning', '<p style="color:#ef4444;">🚨 Trojan detected: Your computer is now extremely cool.</p>');
+            } else if (appName === 'System Crash') {
+                document.body.style.filter = 'invert(1) hue-rotate(180deg)';
+                createWindow('Fatal Error', '<p>Windows Gangsters Edition has crashed due to excessive swag.</p>');
+            } else {
+                createWindow(appName, `<p>Running ${appName} successfully with 0% efficiency.</p>`);
+            }
+        }
+
+        // --- Popup System (Every 20 seconds) ---
+        const popupMessages = [
+            "Play Roblox physics today!",
+            "Want to find sweet free robux? Try robux vomit!",
+            "Uninstall windows gangsters and you die"
+        ];
+
+        let countdown = 20;
+        setInterval(() => {
+            countdown--;
+            document.getElementById('popup-timer').innerText = `Next Popup: ${countdown}s`;
+            if (countdown <= 0) {
+                countdown = 20;
+                triggerRandomPopup();
+            }
+        }, 1000);
+
+        function triggerRandomPopup() {
+            playSound('popup');
+            const randomMsg = popupMessages[Math.floor(Math.random() * popupMessages.length)];
+            createWindow("CRITICAL SYSTEM ALERT ⚠️", `
+                <p style="font-size: 1.1rem; font-weight: bold; margin-bottom: 15px; color: #f87171;">${randomMsg}</p>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="this.closest('.window').remove(); alert('Nice try, you cannot escape.');" style="padding: 6px 14px; background: #dc2626; border: none; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">OK</button>
+                    <button onclick="this.closest('.window').remove()" style="padding: 6px 14px; background: #4b5563; border: none; color: white; border-radius: 4px; cursor: pointer;">Close</button>
+                </div>
+            `, true);
+        }
+    </script>
+</body>
+</html>
