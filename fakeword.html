@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Word - Ultimate Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&family=Comic+Sans+MS&family=Papyrus&family=Wingdings&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Fake Ribbon Menu Bar */
+        #ribbon {
+            background-color: #1b5e20; /* Word green, but slightly confused */
+            color: white;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        .ribbon-tabs {
+            display: flex;
+            background-color: #123e16;
+            padding: 0 10px;
+            font-size: 0.9rem;
+        }
+        .tab {
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .tab:hover, .tab.active {
+            background-color: #1b5e20;
+        }
+        .ribbon-toolbar {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            gap: 15px;
+            background-color: #1b5e20;
+            flex-wrap: wrap;
+            min-height: 55px;
+        }
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding-right: 15px;
+        }
+        button, select {
+            padding: 6px 12px;
+            background-color: #2e7d32;
+            border: 1px solid #4caf50;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.1s ease;
+        }
+        button:hover, select:hover {
+            background-color: #388e3c;
+            transform: translateY(-1px);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        select {
+            cursor: pointer;
+        }
+        select option {
+            background-color: #1b5e20;
+            color: white;
+        }
+
+        /* Document Workspace Area */
+        #workspace {
+            flex-grow: 1;
+            background-color: #e3e5e8;
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+        }
+        #page {
+            width: 800px;
+            min-height: 1056px;
+            background-color: white;
+            padding: 60px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            outline: none;
+            font-size: 16px;
+            line-height: 1.6;
+            position: relative;
+            word-break: break-word;
+        }
+
+        /* Status Bar Footer */
+        #statusbar {
+            background-color: #123e16;
+            color: #a5d6a7;
+            padding: 5px 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            border-top: 1px solid #1b5e20;
+        }
+
+        /* Wacky Meme Elements inside Document */
+        .floating-burger {
+            position: absolute;
+            font-size: 45px;
+            animation: bounceBurger 1.5s infinite alternate ease-in-out;
+            cursor: pointer;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.3));
+            z-index: 5;
+        }
+        @keyframes bounceBurger {
+            0% { transform: translateY(0) rotate(0deg); }
+            100% { transform: translateY(-15px) rotate(10deg); }
+        }
+
+        .shaking {
+            animation: shake 0.2s infinite;
+        }
+        @keyframes shake {
+            0% { transform: translate(1px, 1px) rotate(0deg); }
+            20% { transform: translate(-2px, -1px) rotate(-1deg); }
+            40% { transform: translate(1px, -1px) rotate(1deg); }
+            60% { transform: translate(-1px, 2px) rotate(0deg); }
+            80% { transform: translate(2px, 1px) rotate(-1deg); }
+            100% { transform: translate(1px, -2px) rotate(1deg); }
+        }
+
+        /* Comic Sans / Papyrus style overrides */
+        .font-comic { font-family: 'Comic Sans MS', cursive !important; }
+        .font-papyrus { font-family: 'Papyrus', fantasy !important; }
+        .font-wingdings { font-family: 'Wingdings', sans-serif !important; }
+        .font-segoe { font-family: 'Segoe UI', sans-serif !important; }
+    </style>
+</head>
+<body>
+
+    <div id="ribbon">
+        <div class="ribbon-tabs">
+            <div class="tab active">Home</div>
+            <div class="tab" onclick="alert('Error 404: Insert more RAM to unlock File tab.')">File</div>
+            <div class="tab" onclick="alert('Insert credit card to access Insert tab.')">Insert</div>
+            <div class="tab" onclick="alert('Drawing is disabled because you clicked too hard.')">Draw</div>
+            <div class="tab" onclick="triggerMemeApocalypse()">Meme Apocalypse 🚀</div>
+        </div>
+        <div class="ribbon-toolbar">
+            <div class="tool-group">
+                <button onclick="document.execCommand('bold')"><b>B</b></button>
+                <button onclick="document.execCommand('italic')"><i>I</i></button>
+                <button onclick="document.execCommand('underline')"><u>U</u></button>
+                <button onclick="document.execCommand('strikeThrough')"><s>S</s></button>
+            </div>
+            
+            <div class="tool-group">
+                <select id="fontSelector" onchange="changeFontFamily(this.value)">
+                    <option value="font-segoe">Segoe UI (Boring)</option>
+                    <option value="font-comic">Comic Sans (Certified Gamer)</option>
+                    <option value="font-papyrus">Papyrus (Ancient Egyptian)</option>
+                    <option value="font-wingdings">Wingdings (Alien Cipher)</option>
+                </select>
+                <button onclick="rageCaps()">ALL CAPS RAGE</button>
+            </div>
+
+            <div class="tool-group">
+                <button style="background: #ff9800; border-color: #ffb74d; color: #121212;" onclick="spawnHamburger()">🍔 Hamburger Menu</button>
+                <button style="background: #e91e63; border-color: #f06292;" onclick="explodeText()">💣 Explode Text</button>
+            </div>
+
+            <div class="tool-group">
+                <button style="background: #9c27b0; border-color: #ba68c8;" onclick="toggleEarthquake()">地震 Earthquake</button>
+                <button style="background: #f44336; border-color: #e57373;" onclick="clearPage()">Delete Life</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="workspace">
+        <div id="page" class="font-segoe" contenteditable="true">
+            Welcome to <b>Fake Word</b>! 📄<br><br>
+            Type your important professional corporate memos here... or just click the <b>🍔 Hamburger Menu</b> button above to summon burgers directly onto your spreadsheet/document because corporate rules are an illusion.<br><br>
+            <i>"This software has saved my career zero times." - Anonymous Employee</i>
+        </div>
+    </div>
+
+    <div id="statusbar">
+        <span id="word-count">Words: 38 | Burgers Consumed: 0</span>
+        <span>Page 1 of 69 (Nice) | Mode: Deeply Confused</span>
+    </div>
+
+    <script>
+        const page = document.getElementById('page');
+        const wordCountDisplay = document.getElementById('word-count');
+        let burgerCount = 0;
+
+        // Dynamic Word & Burger Counter
+        page.addEventListener('input', updateStats);
+
+        function updateStats() {
+            const text = page.innerText.trim();
+            const words = text === '' ? 0 : text.split(/\s+/).length;
+            wordCountDisplay.innerText = `Words: ${words} | Burgers Consumed: ${burgerCount}`;
+        }
+
+        // Web Audio API Sound Generator for Meme Actions
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'burger') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(400, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'explosion') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.linearRampToValueAtTime(30, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'rage') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.setValueAtTime(300, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            }
+        }
+
+        // --- Wacky Feature Functions ---
+
+        function spawnHamburger() {
+            burgerCount++;
+            playSound('burger');
+
+            const burger = document.createElement('div');
+            burger.className = 'floating-burger';
+            burger.innerHTML = '🍔';
+
+            // Random position within the workspace view area
+            const maxX = workspace.clientWidth - 100;
+            const maxY = workspace.clientHeight - 100;
+            burger.style.left = Math.max(20, Math.random() * maxX) + 'px';
+            burger.style.top = Math.max(20, Math.random() * maxY) + 'px';
+
+            // Clicking burger makes it multiply or burp emoji
+            burger.onclick = (e) => {
+                e.stopPropagation();
+                burger.innerHTML = '🍟';
+                setTimeout(() => burger.remove(), 400);
+                playSound('burger');
+            };
+
+            workspace.appendChild(burger);
+            updateStats();
+        }
+
+        function changeFontFamily(fontClass) {
+            page.className = fontClass;
+            playSound('rage');
+        }
+
+        function rageCaps() {
+            page.innerText = page.innerText.toUpperCase();
+            playSound('rage');
+            updateStats();
+        }
+
+        function explodeText() {
+            playSound('explosion');
+            const words = page.innerText.split(' ');
+            // Randomize word order chaos
+            for (let i = words.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [words[i], words[j]] = [words[j], words[i]];
+            }
+            page.innerText = words.join(' 💥 ');
+            updateStats();
+        }
+
+        let isShaking = false;
+        function toggleEarthquake() {
+            isShaking = !isShaking;
+            page.classList.toggle('shaking', isShaking);
+            playSound('explosion');
+        }
+
+        function clearPage() {
+            if (confirm("Are you sure you want to delete your entire masterpiece and start your life over?")) {
+                page.innerHTML = "Document successfully wiped by corporate overlords. Type something new!";
+                burgerCount = 0;
+                playSound('explosion');
+                updateStats();
+            }
+        }
+
+        function triggerMemeApocalypse() {
+            playSound('explosion');
+            for(let i = 0; i < 10; i++) {
+                setTimeout(spawnHamburger, i * 100);
+            }
+            document.body.style.filter = "hue-rotate(180deg)";
+            setTimeout(() => {
+                document.body.style.filter = "none";
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
