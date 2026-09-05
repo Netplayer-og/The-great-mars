@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Aim Trainer</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0d0f18;
+            color: #f0f6fc;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+        /* Side Control Panel */
+        #sidebar {
+            width: 300px;
+            background-color: #161b22;
+            border-right: 2px solid #30363d;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            box-shadow: 5px 0 20px rgba(0,0,0,0.6);
+        }
+        h2 {
+            font-size: 1.4rem;
+            color: #58a6ff;
+            border-bottom: 2px solid #30363d;
+            padding-bottom: 10px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-size: 0.9rem;
+            color: #8b949e;
+            font-weight: 600;
+        }
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        button {
+            padding: 12px;
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            font-size: 0.95rem;
+        }
+        button:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+        button.active {
+            background-color: #1f6feb;
+            color: #ffffff;
+            border-color: #58a6ff;
+        }
+        .action-btn {
+            background-color: #238636;
+            color: white;
+            border: none;
+            font-size: 1.1rem;
+            margin-top: 5px;
+        }
+        .action-btn:hover {
+            background-color: #2ea043;
+        }
+        /* Stats Dashboard Panel */
+        .stats-panel {
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #58a6ff;
+        }
+        /* Canvas & Overlay Viewport */
+        #game-container {
+            flex-grow: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #1f2430 0%, #0d0f18 100%);
+            cursor: crosshair;
+        }
+        canvas {
+            display: block;
+        }
+        /* HUD Display over Canvas */
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+        }
+        .hud-item {
+            background: rgba(22, 27, 34, 0.75);
+            padding: 8px 16px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            backdrop-filter: blur(4px);
+        }
+        /* Game Over / Start Overlay Card */
+        #overlay-card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(22, 27, 34, 0.95);
+            padding: 30px;
+            border-radius: 12px;
+            border: 2px solid #30363d;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            width: 350px;
+        }
+        #overlay-card h3 {
+            font-size: 1.8rem;
+            color: #58a6ff;
+        }
+        #overlay-card p {
+            color: #8b949e;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h2>Aim Trainer</h2>
+        
+        <div class="control-group">
+            <label>Difficulty Mode</label>
+            <div class="btn-grid">
+                <button id="btn-easy" class="active" onclick="setMode('easy')">Easy (Static)</button>
+                <button id="btn-medium" onclick="setMode('medium')">Medium (Slow Moving)</button>
+                <button id="btn-hard" onclick="setMode('hard')">Hard (Fast Moving)</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Audio & Music</label>
+            <button id="btn-music" onclick="toggleMusic()">Chiptune Music: OFF</button>
+            <button id="btn-sfx" onclick="toggleSfx()">Sound Effects: ON</button>
+        </div>
+
+        <div class="control-group">
+            <label>Live Statistics</label>
+            <div class="stats-panel">
+                <div class="stat-row"><span>Score:</span> <span id="stat-score" class="stat-value">0</span></div>
+                <div class="stat-row"><span>Hits / Total:</span> <span id="stat-accuracy" class="stat-value">0 / 0</span></div>
+                <div class="stat-row"><span>Accuracy:</span> <span id="stat-acc-pct" class="stat-value">100%</span></div>
+            </div>
+        </div>
+
+        <button class="action-btn" id="main-action-btn" onclick="startGame()">Start Training</button>
+    </div>
+
+    <div id="game-container">
+        <div id="hud">
+            <div class="hud-item">Time: <span id="hud-timer">30</span>s</div>
+            <div class="hud-item">Score: <span id="hud-score">0</span></div>
+        </div>
+
+        <div id="overlay-card">
+            <h3 id="overlay-title">Ready to Train?</h3>
+            <p id="overlay-desc">Select your desired difficulty mode on the left and click start to test your reflex precision and accuracy!</p>
+            <button class="action-btn" onclick="startGame()">Play Game</button>
+        </div>
+    </div>
+
+    <script>
+        const container = document.getElementById('game-container');
+        const canvas = document.createElement('canvas');
+        container.appendChild(canvas);
+        const ctx = canvas.getContext('2d');
+
+        // --- Game Config & State ---
+        let currentMode = 'easy'; // 'easy', 'medium', 'hard'
+        let gameState = 'idle';   // 'idle', 'running', 'gameover'
+        let score = 0;
+        let hits = 0;
+        let shotsFired = 0;
+        let timeLeft = 30;
+        let timerInterval = null;
+
+        let musicEnabled = false;
+        let sfxEnabled = true;
+
+        // Target Object Array
+        let targets = [];
+
+        // Resize Canvas dynamically
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function setMode(mode) {
+            if (gameState === 'running') return;
+            currentMode = mode;
+            ['easy', 'medium', 'hard'].forEach(m => {
+                document.getElementById(`btn-${m}`).classList.remove('active');
+            });
+            document.getElementById(`btn-${mode}`).classList.add('active');
+            playSfx('click');
+        }
+
+        // --- Web Audio API (Chiptune Sound Engine) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSfx(type) {
+            if (!sfxEnabled) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(350, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.start(now); osc.stop(now + 0.05);
+            } else if (type === 'hit') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.exponentialRampToValueAtTime(900, now + 0.12);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now); osc.stop(now + 0.12);
+            } else if (type === 'miss') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, now);
+                osc.frequency.linearRampToValueAtTime(70, now + 0.1);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            }
+        }
+
+        // Simple Background Chiptune Sequencer Loop
+        let musicTimer = null;
+        const melodyNotes = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63]; // C chord arpeggio
+        let noteIndex = 0;
+
+        function toggleMusic() {
+            musicEnabled = !musicEnabled;
+            const btn = document.getElementById('btn-music');
+            btn.innerText = `Chiptune Music: ${musicEnabled ? 'ON' : 'OFF'}`;
+            btn.classList.toggle('active', musicEnabled);
+            playSfx('click');
+
+            if (musicEnabled) {
+                startChiptuneLoop();
+            } else {
+                clearInterval(musicTimer);
+            }
+        }
+
+        function startChiptuneLoop() {
+            if (musicTimer) clearInterval(musicTimer);
+            musicTimer = setInterval(() => {
+                if (!musicEnabled || audioCtx.state !== 'running') return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(melodyNotes[noteIndex], audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.18);
+
+                noteIndex = (noteIndex + 1) % melodyNotes.length;
+            }, 200);
+        }
+
+        function toggleSfx() {
+            sfxEnabled = !sfxEnabled;
+            const btn = document.getElementById('btn-sfx');
+            btn.innerText = `Sound Effects: ${sfxEnabled ? 'ON' : 'OFF'}`;
+            btn.classList.toggle('active', sfxEnabled);
+            playSfx('click');
+        }
+
+        // --- Target Management ---
+        class Target {
+            constructor() {
+                this.radius = currentMode === 'hard' ? 22 : (currentMode === 'medium' ? 30 : 38);
+                // Keep targets safely inside canvas bounds
+                this.x = this.radius + Math.random() * (canvas.width - this.radius * 2);
+                this.y = this.radius + Math.random() * (canvas.height - this.radius * 2 - 60); // avoid bottom edge overlay
+
+                if (currentMode !== 'easy') {
+                    const speed = currentMode === 'hard' ? 5.5 : 2.5;
+                    const angle = Math.random() * Math.PI * 2;
+                    this.vx = Math.cos(angle) * speed;
+                    this.vy = Math.sin(angle) * speed;
+                } else {
+                    this.vx = 0;
+                    this.vy = 0;
+                }
+                this.color = currentMode === 'hard' ? '#f85149' : (currentMode === 'medium' ? '#d29922' : '#3fb950');
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Bounce off canvas boundaries for moving modes
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.vx *= -1;
+                    this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                }
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                    this.vy *= -1;
+                    this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.lineWidth = 4;
+                ctx.strokeStyle = '#ffffff';
+                ctx.stroke();
+                ctx.closePath();
+
+                // Inner bullseye ring
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius * 0.4, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        function spawnTarget() {
+            targets = [new Target()]; // Keep active count to 1 target at a time for precise training
+        }
+
+        // --- Core Game Flow Control ---
+        function startGame() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            gameState = 'running';
+            score = 0;
+            hits = 0;
+            shotsFired = 0;
+            timeLeft = 30;
+
+            document.getElementById('overlay-card').style.display = 'none';
+            document.getElementById('main-action-btn').innerText = 'Restart Training';
+            
+            updateStatsUI();
+            spawnTarget();
+
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                document.getElementById('hud-timer').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            gameState = 'gameover';
+            clearInterval(timerInterval);
+            targets = [];
+
+            const accuracy = shotsFired > 0 ? Math.round((hits / shotsFired) * 100) : 0;
+
+            const overlay = document.getElementById('overlay-card');
+            document.getElementById('overlay-title').innerText = "Training Complete!";
+            document.getElementById('overlay-desc').innerHTML = `
+                Final Score: <strong>${score}</strong><br>
+                Total Hits: <strong>${hits} / ${shotsFired}</strong><br>
+                Accuracy Rate: <strong>${accuracy}%</strong>
+            `;
+            overlay.style.display = 'flex';
+            document.getElementById('main-action-btn').innerText = 'Start Training';
+        }
+
+        // Canvas Click Listener for Shots
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameState !== 'running') return;
+
+            shotsFired++;
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            let hitRegistered = false;
+            targets.forEach((target, index) => {
+                const dist = Math.hypot(mouseX - target.x, mouseY - target.y);
+                if (dist <= target.radius) {
+                    hitRegistered = true;
+                    hits++;
+                    score += currentMode === 'hard' ? 300 : (currentMode === 'medium' ? 200 : 100);
+                    playSfx('hit');
+                    spawnTarget(); // Immediate replacement target on hit
+                }
+            });
+
+            if (!hitRegistered) {
+                playSfx('miss');
+            }
+
+            updateStatsUI();
+        });
+
+        function updateStatsUI() {
+            document.getElementById('hud-score').innerText = score;
+            document.getElementById('stat-score').innerText = score;
+            document.getElementById('stat-accuracy').innerText = `${hits} / ${shotsFired}`;
+            const accPct = shotsFired > 0 ? Math.round((hits / shotsFired) * 100) : 100;
+            document.getElementById('stat-acc-pct').innerText = `${accPct}%`;
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameState === 'running') {
+                targets.forEach(target => {
+                    target.update();
+                    target.draw();
+                });
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
