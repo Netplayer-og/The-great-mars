@@ -90,12 +90,49 @@
             font-size: 8px;
             text-decoration: none;
             box-shadow: 3px 3px 0px #000;
-            margin-bottom: 18px;
+            margin-bottom: 15px;
             transition: all 0.2s;
         }
 
         .quests-button:hover {
             transform: translate(-2px, -2px);
+            background: #29213d;
+        }
+
+        /* ========================= */
+        /* CATEGORY BAR */
+        /* ========================= */
+
+        .category-bar {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+            padding: 0 15px;
+        }
+
+        .category-button {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 7px;
+            color: white;
+            background: #181524;
+            border: 3px solid #3d355c;
+            padding: 9px 11px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px #000;
+            transition: all 0.2s;
+        }
+
+        .category-button:hover {
+            transform: translate(-2px, -2px);
+            border-color: #ff4500;
+            color: #ff4500;
+        }
+
+        .category-button.active {
+            border-color: #ff4500;
+            color: #ff4500;
             background: #29213d;
         }
 
@@ -130,6 +167,11 @@
         .mode-card:hover {
             transform: translate(-2px, -2px);
             border-color: #ff4500;
+        }
+
+        /* HIDDEN CATEGORY CARDS */
+        .mode-card.hidden {
+            display: none;
         }
 
 
@@ -295,12 +337,14 @@
         body.theme-red .top-nav a,
         body.theme-red .mode-card,
         body.theme-red .settings-panel,
-        body.theme-red .settings-tab {
+        body.theme-red .settings-tab,
+        body.theme-red .category-button {
             background: #321010;
         }
 
         body.theme-red .mode-card,
-        body.theme-red .top-nav a {
+        body.theme-red .top-nav a,
+        body.theme-red .category-button {
             border-color: #7a2222;
         }
 
@@ -312,7 +356,8 @@
         body.theme-pink .top-nav a,
         body.theme-pink .mode-card,
         body.theme-pink .settings-panel,
-        body.theme-pink .settings-tab {
+        body.theme-pink .settings-tab,
+        body.theme-pink .category-button {
             background: #35152a;
         }
 
@@ -335,7 +380,8 @@
         body.theme-blue .top-nav a,
         body.theme-blue .mode-card,
         body.theme-blue .settings-panel,
-        body.theme-blue .settings-tab {
+        body.theme-blue .settings-tab,
+        body.theme-blue .category-button {
             background: #10243a;
         }
 
@@ -358,7 +404,8 @@
         body.theme-green .top-nav a,
         body.theme-green .mode-card,
         body.theme-green .settings-panel,
-        body.theme-green .settings-tab {
+        body.theme-green .settings-tab,
+        body.theme-green .category-button {
             background: #0e2b1d;
         }
 
@@ -400,7 +447,8 @@
         body.font-comic .top-nav a,
         body.font-comic .settings-panel,
         body.font-comic .settings-tab,
-        body.font-comic .setting-option {
+        body.font-comic .setting-option,
+        body.font-comic .category-button {
             font-family: "Comic Sans MS", "Comic Sans", cursive;
         }
 
@@ -409,7 +457,8 @@
         body.font-italic .top-nav a,
         body.font-italic .settings-panel,
         body.font-italic .settings-tab,
-        body.font-italic .setting-option {
+        body.font-italic .setting-option,
+        body.font-italic .category-button {
             font-family: Arial, sans-serif;
             font-style: italic;
         }
@@ -419,7 +468,8 @@
         body.font-innocent .top-nav a,
         body.font-innocent .settings-panel,
         body.font-innocent .settings-tab,
-        body.font-innocent .setting-option {
+        body.font-innocent .setting-option,
+        body.font-innocent .category-button {
             font-family: "Trebuchet MS", sans-serif;
         }
     </style>
@@ -452,50 +502,93 @@
         📜 QUESTS
     </a>
 
+    <!-- CATEGORY BAR -->
+    <div class="category-bar">
+
+        <button class="category-button active" onclick="filterCategory('all', this)">
+            ALL
+        </button>
+
+        <button class="category-button" onclick="filterCategory('shooter', this)">
+            SHOOTER
+        </button>
+
+        <button class="category-button" onclick="filterCategory('puzzle', this)">
+            PUZZLE
+        </button>
+
+        <button class="category-button" onclick="filterCategory('car', this)">
+            CAR
+        </button>
+
+        <button class="category-button" onclick="filterCategory('strategy', this)">
+            STRATEGY
+        </button>
+
+        <button class="category-button" onclick="filterCategory('adventure', this)">
+            ADVENTURE
+        </button>
+
+        <button class="category-button" onclick="filterCategory('other', this)">
+            OTHER
+        </button>
+
+    </div>
+
+
     <!-- GAME MODES GRID -->
     <div class="modes-container" id="modes-grid">
 
-        <a href="arcade.html" class="mode-card">
+        <!-- STRATEGY -->
+        <a href="arcade.html" class="mode-card" data-category="strategy">
             <div style="font-size: 30px;">🕹️</div>
             <div style="font-size: 10px; color: #ff4500; margin-top:10px;">ESCAPE OF THE MARS</div>
         </a>
 
-        <a href="goldmode.html" class="mode-card">
+        <!-- PUZZLE -->
+        <a href="goldmode.html" class="mode-card" data-category="puzzle">
             <div style="font-size: 30px;">🪙</div>
             <div style="font-size: 10px; color: #ffd700; margin-top:10px;">GOLD-MINER</div>
         </a>
 
-        <a href="summermode.html" class="mode-card">
+        <!-- OTHER -->
+        <a href="summermode.html" class="mode-card" data-category="other">
             <div style="font-size: 30px;">🏊‍♂️</div>
             <div style="font-size: 10px; color: #00b4d8; margin-top:10px;">SUMMER SMASH</div>
         </a>
 
-        <a href="aimtrainer.html" class="mode-card">
+        <!-- SHOOTER -->
+        <a href="aimtrainer.html" class="mode-card" data-category="shooter">
             <div style="font-size: 30px;">🎯</div>
             <div style="font-size: 10px; color: #750000; margin-top:10px;">AIM TRAINER</div>
         </a>
 
-        <a href="NetOS.html" class="mode-card">
+        <!-- STRATEGY -->
+        <a href="NetOS.html" class="mode-card" data-category="strategy">
             <div style="font-size: 30px;">🛜</div>
             <div style="font-size: 10px; color: #2e0003; margin-top:10px;">NetOS</div>
         </a>
 
-        <a href="car.html" class="mode-card">
+        <!-- CAR -->
+        <a href="car.html" class="mode-card" data-category="car">
             <div style="font-size: 30px;">🚗</div>
             <div style="font-size: 10px; color: #777d07; margin-top:10px;">CAR FOR SALE</div>
         </a>
 
-        <a href="fakeword.html" class="mode-card">
+        <!-- PUZZLE -->
+        <a href="fakeword.html" class="mode-card" data-category="puzzle">
             <div style="font-size: 30px;">📝</div>
             <div style="font-size: 10px; color: ##0090b8; margin-top:10px;">MACROHARD WORD</div>
         </a>
 
-        <a href="roblox_avatar_physics_designer.html" class="mode-card">
+        <!-- OTHER -->
+        <a href="roblox_avatar_physics_designer.html" class="mode-card" data-category="other">
             <div style="font-size: 30px;">🏗️</div>
             <div style="font-size: 10px; color: #0085FF; margin-top:10px;">ROBLOX PHYSICS</div>
         </a>
 
-        <a href="windows.html" class="mode-card">
+        <!-- STRATEGY -->
+        <a href="windows.html" class="mode-card" data-category="strategy">
             <div style="font-size: 30px;">🪟</div>
             <div style="font-size: 10px; color: #750000; margin-top:10px;">WINDOWS GANGSTERS</div>
         </a>
@@ -507,6 +600,7 @@
     <div class="settings-tab" onclick="toggleSettings()">
         ⚙ SETTINGS
     </div>
+
 
     <!-- SETTINGS PANEL -->
     <div class="settings-panel" id="settings-panel">
@@ -540,6 +634,7 @@
             </button>
         </div>
 
+
         <!-- FONT -->
         <div class="settings-section">
             <span class="settings-label">FONT</span>
@@ -560,6 +655,7 @@
                 🌸 INNOCENT
             </button>
         </div>
+
 
         <!-- FORMAT -->
         <div class="settings-section">
@@ -613,6 +709,49 @@
 
         function toggleSettings() {
             document.getElementById('settings-panel').classList.toggle('open');
+        }
+
+
+        /* ========================= */
+        /* CATEGORY SYSTEM */
+        /* ========================= */
+
+        function filterCategory(category, button) {
+
+            let cards = document.querySelectorAll('.mode-card');
+
+            cards.forEach(card => {
+
+                if (category === 'all' || card.dataset.category === category) {
+                    card.classList.remove('hidden');
+                } else {
+                    card.classList.add('hidden');
+                }
+
+            });
+
+            document.querySelectorAll('.category-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            button.classList.add('active');
+
+            localStorage.setItem('net_category', category);
+        }
+
+
+        function loadCategory() {
+
+            let savedCategory =
+                localStorage.getItem('net_category') || 'all';
+
+            let button = document.querySelector(
+                '[onclick="filterCategory(\'' + savedCategory + '\', this)"]'
+            );
+
+            if (button) {
+                filterCategory(savedCategory, button);
+            }
         }
 
 
@@ -683,7 +822,7 @@
 
 
         /* ========================= */
-        /* SELECTED BUTTONS */
+        /* SELECTED SETTINGS */
         /* ========================= */
 
         function updateSelectedButtons() {
@@ -756,8 +895,13 @@
         }
 
 
+        /* ========================= */
+        /* START */
+        /* ========================= */
+
         loadUser();
         loadSettings();
+        loadCategory();
 
     </script>
 
