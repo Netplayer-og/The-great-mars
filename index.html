@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <title>Net Games - WOWIE</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
     <style>
         body {
             margin: 0; padding: 0;
@@ -79,6 +80,26 @@
             cursor: pointer;
         }
 
+        /* QUESTS SMALL BUTTON */
+        .quests-button {
+            display: inline-block;
+            background: #181524;
+            border: 3px solid #ffd700;
+            color: #ffd700;
+            padding: 9px 14px;
+            font-size: 8px;
+            text-decoration: none;
+            box-shadow: 3px 3px 0px #000;
+            margin-bottom: 18px;
+            transition: all 0.2s;
+        }
+
+        .quests-button:hover {
+            transform: translate(-2px, -2px);
+            background: #29213d;
+        }
+
+        /* GAME MODES GRID */
         .modes-container {
             display: flex;
             gap: 15px;
@@ -88,25 +109,71 @@
             max-width: none;
             box-sizing: border-box;
             padding: 0 20px;
+            transition: all 0.3s;
         }
 
+        /* NORMAL GAME CARD */
         .mode-card {
-            background: #1c182d; 
-            border: 4px solid #3d355c; 
+            background: #1c182d;
+            border: 4px solid #3d355c;
             padding: 15px;
-            width: 180px; 
-            text-align: center; 
-            cursor: pointer; 
-            text-decoration: none; 
+            width: 180px;
+            text-align: center;
+            cursor: pointer;
+            text-decoration: none;
             color: white;
-            box-shadow: 5px 5px 0px #000; 
+            box-shadow: 5px 5px 0px #000;
             transition: all 0.2s;
             box-sizing: border-box;
         }
 
-        .mode-card:hover { 
-            transform: translate(-2px, -2px); 
-            border-color: #ff4500; 
+        .mode-card:hover {
+            transform: translate(-2px, -2px);
+            border-color: #ff4500;
+        }
+
+
+        /* ========================= */
+        /* FORMAT SETTINGS */
+        /* ========================= */
+
+        /* SMALL */
+        body.format-small .mode-card {
+            width: 135px;
+            padding: 10px;
+        }
+
+        body.format-small .mode-card div:first-child {
+            font-size: 22px !important;
+        }
+
+        body.format-small .mode-card div:last-child {
+            font-size: 7px !important;
+        }
+
+        /* LARGE */
+        body.format-large .mode-card {
+            width: 230px;
+            padding: 22px;
+        }
+
+        body.format-large .mode-card div:first-child {
+            font-size: 42px !important;
+        }
+
+        body.format-large .mode-card div:last-child {
+            font-size: 11px !important;
+        }
+
+        /* VERTICAL */
+        body.format-vertical .modes-container {
+            flex-direction: column;
+            align-items: center;
+            flex-wrap: nowrap;
+        }
+
+        body.format-vertical .mode-card {
+            width: min(500px, 90%);
         }
 
 
@@ -357,6 +424,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <h1>NET GAMES</h1>
@@ -372,14 +440,21 @@
     <div class="login-box">
         <span style="font-size: 8px; color: #aaa;">ACCOUNT LOGGED IN: </span>
         <b id="active-user" style="color: #2a9d8f; font-size: 9px;">Guest</b>
+
         <div style="margin-top: 10px;">
             <input type="text" id="username-input" placeholder="ENTER USERNAME">
             <button class="btn-login" onclick="saveUser()">LOGIN / SAVE</button>
         </div>
     </div>
 
-    <!-- GAME MODES GRID CONTAINER -->
+    <!-- QUESTS -->
+    <a href="quests.html" class="quests-button">
+        📜 QUESTS
+    </a>
+
+    <!-- GAME MODES GRID -->
     <div class="modes-container" id="modes-grid">
+
         <a href="arcade.html" class="mode-card">
             <div style="font-size: 30px;">🕹️</div>
             <div style="font-size: 10px; color: #ff4500; margin-top:10px;">ESCAPE OF THE MARS</div>
@@ -415,20 +490,16 @@
             <div style="font-size: 10px; color: ##0090b8; margin-top:10px;">MACROHARD WORD</div>
         </a>
 
-        <a href="quests.html" class="mode-card" style="border-color: #ffd700;">
-            <div style="font-size: 30px;">📜</div>
-            <div style="font-size: 10px; color: #ffd700; margin-top:10px;">QUESTS</div>
-        </a>
-
-        <a href="roblox_avatar_physics_designer.html" class="mode-card" style="border-color: #00185C;">
+        <a href="roblox_avatar_physics_designer.html" class="mode-card">
             <div style="font-size: 30px;">🏗️</div>
             <div style="font-size: 10px; color: #0085FF; margin-top:10px;">ROBLOX PHYSICS</div>
         </a>
-        
-        <a href="windows.html" class="mode-card" style="border-color: #00185C;">
+
+        <a href="windows.html" class="mode-card">
             <div style="font-size: 30px;">🪟</div>
             <div style="font-size: 10px; color: #750000; margin-top:10px;">WINDOWS GANGSTERS</div>
         </a>
+
     </div>
 
 
@@ -490,10 +561,32 @@
             </button>
         </div>
 
+        <!-- FORMAT -->
+        <div class="settings-section">
+            <span class="settings-label">FORMAT</span>
+
+            <button class="setting-option" data-format="default" onclick="setFormat('default')">
+                ▦ DEFAULT
+            </button>
+
+            <button class="setting-option" data-format="small" onclick="setFormat('small')">
+                ▪ SMALL
+            </button>
+
+            <button class="setting-option" data-format="large" onclick="setFormat('large')">
+                ▣ LARGE
+            </button>
+
+            <button class="setting-option" data-format="vertical" onclick="setFormat('vertical')">
+                ☰ VERTICAL
+            </button>
+        </div>
+
     </div>
 
 
     <script>
+
         /* ========================= */
         /* ACCOUNT */
         /* ========================= */
@@ -505,6 +598,7 @@
 
         function saveUser() {
             let val = document.getElementById('username-input').value.trim();
+
             if (val) {
                 localStorage.setItem('mars_user', val);
                 loadUser();
@@ -514,7 +608,7 @@
 
 
         /* ========================= */
-        /* SETTINGS */
+        /* SETTINGS PANEL */
         /* ========================= */
 
         function toggleSettings() {
@@ -522,7 +616,12 @@
         }
 
 
+        /* ========================= */
+        /* THEMES */
+        /* ========================= */
+
         function setTheme(theme) {
+
             document.body.classList.remove(
                 'theme-red',
                 'theme-pink',
@@ -535,11 +634,17 @@
             }
 
             localStorage.setItem('net_theme', theme);
+
             updateSelectedButtons();
         }
 
 
+        /* ========================= */
+        /* FONTS */
+        /* ========================= */
+
         function setFont(font) {
+
             document.body.classList.remove(
                 'font-press',
                 'font-comic',
@@ -550,44 +655,110 @@
             document.body.classList.add('font-' + font);
 
             localStorage.setItem('net_font', font);
+
             updateSelectedButtons();
         }
 
 
+        /* ========================= */
+        /* FORMAT */
+        /* ========================= */
+
+        function setFormat(format) {
+
+            document.body.classList.remove(
+                'format-small',
+                'format-large',
+                'format-vertical'
+            );
+
+            if (format !== 'default') {
+                document.body.classList.add('format-' + format);
+            }
+
+            localStorage.setItem('net_format', format);
+
+            updateSelectedButtons();
+        }
+
+
+        /* ========================= */
+        /* SELECTED BUTTONS */
+        /* ========================= */
+
         function updateSelectedButtons() {
-            let currentTheme = localStorage.getItem('net_theme') || 'classic';
-            let currentFont = localStorage.getItem('net_font') || 'press';
+
+            let currentTheme =
+                localStorage.getItem('net_theme') || 'classic';
+
+            let currentFont =
+                localStorage.getItem('net_font') || 'press';
+
+            let currentFormat =
+                localStorage.getItem('net_format') || 'default';
+
 
             document.querySelectorAll('[data-theme]').forEach(button => {
+
                 button.classList.remove('selected');
 
                 if (button.dataset.theme === currentTheme) {
                     button.classList.add('selected');
                 }
+
             });
 
+
             document.querySelectorAll('[data-font]').forEach(button => {
+
                 button.classList.remove('selected');
 
                 if (button.dataset.font === currentFont) {
                     button.classList.add('selected');
                 }
+
+            });
+
+
+            document.querySelectorAll('[data-format]').forEach(button => {
+
+                button.classList.remove('selected');
+
+                if (button.dataset.format === currentFormat) {
+                    button.classList.add('selected');
+                }
+
             });
         }
 
 
+        /* ========================= */
+        /* LOAD SETTINGS */
+        /* ========================= */
+
         function loadSettings() {
-            let savedTheme = localStorage.getItem('net_theme') || 'classic';
-            let savedFont = localStorage.getItem('net_font') || 'press';
+
+            let savedTheme =
+                localStorage.getItem('net_theme') || 'classic';
+
+            let savedFont =
+                localStorage.getItem('net_font') || 'press';
+
+            let savedFormat =
+                localStorage.getItem('net_format') || 'default';
+
 
             setTheme(savedTheme);
             setFont(savedFont);
+            setFormat(savedFormat);
+
             updateSelectedButtons();
         }
 
 
         loadUser();
         loadSettings();
+
     </script>
 
 </body>
