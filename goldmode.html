@@ -3,191 +3,399 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gold Mode - Escape of Mars</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>GOLD-MINER : Meme Stock & Crypto Market</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
         body {
-            margin: 0; padding: 0;
-            background-color: #0b0a10; color: #fff;
-            font-family: 'Press Start 2P', cursive;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            min-height: 100vh; overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        h1 { color: #ffd700; font-size: 24px; margin-bottom: 10px; text-shadow: 3px 3px 0px #000; }
-        .back-link { position: absolute; top: 15px; left: 15px; color: #aaa; text-decoration: none; font-size: 10px; }
-        .back-link:hover { color: #ffd700; }
-
-        canvas {
-            border: 4px solid #ffd700;
-            background-color: #1a162b;
-            box-shadow: 6px 6px 0px #000;
-            image-rendering: pixelated;
+        /* Side Control Panel */
+        #sidebar {
+            width: 320px;
+            background-color: #161b22;
+            border-right: 2px solid #30363d;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        h1 {
+            font-size: 1.4rem;
+            color: #f1e05a;
+            border-bottom: 2px solid #30363d;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .wallet-card {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .wallet-title {
+            font-size: 0.8rem;
+            color: #8b949e;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .wallet-balance {
+            font-size: 1.5rem;
+            color: #3fb950;
+            font-weight: bold;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-size: 0.85rem;
+            color: #8b949e;
+            font-weight: bold;
+        }
+        input, button {
+            padding: 10px;
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: #f1e05a;
+        }
+        button {
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .action-btn {
+            background-color: #238636;
+            border-color: #2ea043;
+            color: white;
+        }
+        .action-btn:hover {
+            background-color: #2ea043;
+        }
+        .sell-btn {
+            background-color: #da3633;
+            border-color: #f85149;
+            color: white;
+        }
+        .sell-btn:hover {
+            background-color: #f85149;
         }
 
-        /* BADGE POPUP NOTIFICATION STYLES */
-        #badge-toast {
-            position: fixed; top: 20px; right: -350px;
-            background: #181524; border: 3px solid #ffd700;
-            box-shadow: 4px 4px 0px #000; padding: 12px;
-            display: flex; align-items: center; gap: 12px;
-            z-index: 999; transition: right 0.4s ease-in-out;
-            border-radius: 4px; font-family: 'Press Start 2P', cursive;
+        /* Main Marketplace Viewport */
+        #main-content {
+            flex-grow: 1;
+            padding: 25px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: radial-gradient(circle at top right, #1f2430 0%, #0d1117 70%);
         }
-        #badge-toast.show { right: 20px; }
-        #badge-toast img { width: 40px; height: 40px; image-rendering: pixelated; }
-        .badge-info h4 { margin: 0; font-size: 8px; color: #ffd700; }
-        .badge-info p { margin: 4px 0 0 0; font-size: 6px; color: #aaa; }
+        .section-title {
+            font-size: 1.1rem;
+            color: #f1e05a;
+            margin-bottom: 10px;
+        }
+        
+        /* Market Grid */
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 15px;
+        }
+        .coin-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+            transition: border-color 0.2s;
+        }
+        .coin-card:hover {
+            border-color: #8b949e;
+        }
+        .coin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .coin-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #ffffff;
+        }
+        .coin-symbol {
+            font-size: 0.75rem;
+            background: #30363d;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #8b949e;
+        }
+        .coin-price {
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+        .price-up { color: #3fb950; }
+        .price-down { color: #f85149; }
+        
+        .coin-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .holding-info {
+            font-size: 0.8rem;
+            color: #8b949e;
+            display: flex;
+            justify-content: space-between;
+        }
+        .holding-val {
+            color: #f1e05a;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">⬅ MAIN MENU</a>
-    <h1>GOLD MODE</h1>
+    <div id="sidebar">
+        <h1><span>⛏️</span> GOLD-MINER</h1>
+        
+        <div class="wallet-card">
+            <span class="wallet-title">Cash Balance ($USD)</span>
+            <span id="cash-balance" class="wallet-balance">$1,000.00</span>
+        </div>
 
-    <canvas id="canvas" width="800" height="500"></canvas>
+        <div class="control-group">
+            <label>Launch Your Own Coin</label>
+            <input type="text" id="custom-name" placeholder="Coin Name (e.g. CatCoin)">
+            <input type="text" id="custom-symbol" placeholder="Symbol (e.g. MEOW)">
+            <button class="action-btn" onclick="createCustomCoin()">Launch Coin ($500 Fee)</button>
+        </div>
 
-    <!-- BADGE UNLOCK NOTIFICATION TOAST -->
-    <div id="badge-toast">
-        <img id="badge-icon" src="" alt="Badge">
-        <div class="badge-info">
-            <h4 id="badge-title">BADGE UNLOCKED!</h4>
-            <p id="badge-desc">You unlocked a new achievement.</p>
+        <div class="control-group" style="margin-top: auto;">
+            <label>Market Actions</label>
+            <button onclick="resetGame()" style="background:#21262d; border-color:#f85149; color:#f85149;">Bankruptcy Reset</button>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <div>
+            <div class="section-title">📈 Live Crypto & Meme Market</div>
+            <div id="market-grid" class="market-grid">
+                </div>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-
-        const badgeAudio = new Audio('SFX/applepay.mp3');
-        const user = localStorage.getItem('mars_user') || "Guest";
-
-        const badgeData = {
-            social: { title: "SOCIAL BUTTERFLY", desc: "Listened to Martian chatter", icon: "Pixelgame/socialbadge.png" },
-            chillax: { title: "CHILLAX CHAMP", desc: "Hanging out in class", icon: "Pixelgame/chillaxbadge.png" },
-            victory: { title: "MARS CONQUEROR", desc: "Completed Gold Mode", icon: "Pixelgame/victorybadge.png" },
-            memorial: { title: "MARTIAN MEMORIAL", desc: "Fell in battle on Mars", icon: "Pixelgame/memorialbadge.png" }
-        };
-
-        function unlockBadge(badgeKey) {
-            let userBadges = JSON.parse(localStorage.getItem(user + '_badges') || '{}');
-            if (userBadges[badgeKey]) return;
-
-            userBadges[badgeKey] = true;
-            localStorage.setItem(user + '_badges', JSON.stringify(userBadges));
-
-            badgeAudio.currentTime = 0;
-            badgeAudio.play().catch(e => {});
-
-            let badge = badgeData[badgeKey];
-            if (badge) {
-                document.getElementById('badge-icon').src = badge.icon;
-                document.getElementById('badge-title').innerText = badge.title;
-                document.getElementById('badge-desc').innerText = badge.desc;
-
-                let toast = document.getElementById('badge-toast');
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 3500);
-            }
-        }
-
-        const images = {};
-        const imageSources = {
-            musa: 'Pixelgame/musa.png',
-            mas: 'Pixelgame/mas.png',
-            net: 'Pixelgame/net.png',
-            wasi: 'Pixelgame/wasi.png',
-            nyx: 'Pixelgame/nyx.png',
-            timmy: 'Pixelgame/timmy.png'
-        };
-
-        for (let key in imageSources) {
-            images[key] = new Image();
-            images[key].src = imageSources[key];
-        }
-
-        const player = { x: 100, y: 250, size: 60, speed: 4 };
-        const npcs = [
-            { id: 'mas', x: 300, y: 150, talk: "Mas: Yo Musa, did you do the homework?", talked: false },
-            { id: 'net', x: 500, y: 150, talk: "Net: Bro the Wi-Fi in this room is trash.", talked: false },
-            { id: 'wasi', x: 300, y: 350, talk: "Wasi: Anyone trading SAB skins right now?", talked: false },
-            { id: 'nyx', x: 500, y: 350, talk: "Nyx: Timmy hit the griddy on the desk again...", talked: false }
+        // --- Game State & Initial Data ---
+        let cash = 1000.00;
+        
+        // Initial 4 Coins
+        let coins = [
+            { id: 'doge', name: 'Dogecoin', symbol: 'DOGE', price: 0.12, holdings: 1000, history: [] },
+            { id: 'gold', name: 'Gold Coin', symbol: 'GLD', price: 1850.50, holdings: 0, history: [] },
+            { id: 'btc', name: 'Bitcoin', symbol: 'BTC', price: 64200.00, holdings: 0, history: [] },
+            { id: 'amogus', name: 'AMOGUS coin', symbol: 'SUS', price: 0.0069, holdings: 0, history: [] }
         ];
 
-        let dialogueText = "Walk up to your friends to talk!";
-        let dialogueTimer = 0;
-        const keys = {};
+        // --- Web Audio Sound Generator ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
 
-        window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+            if (type === 'buy') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.15);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'sell') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(500, now);
+                osc.frequency.linearRampToValueAtTime(200, now + 0.15);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'launch') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(800, now + 0.3);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            }
+        }
 
-        function update() {
-            if ((keys['w'] || keys['arrowup']) && player.y > 40) player.y -= player.speed;
-            if ((keys['s'] || keys['arrowdown']) && player.y < canvas.height - 40) player.y += player.speed;
-            if ((keys['a'] || keys['arrowleft']) && player.x > 40) player.x -= player.speed;
-            if ((keys['d'] || keys['arrowright']) && player.x < canvas.width - 40) player.x += player.speed;
+        // --- Core Simulation Tick (Price fluctuations every 1.5s) ---
+        setInterval(() => {
+            coins.forEach(coin => {
+                // Volatility factor based on coin type
+                let volatility = coin.price * 0.08;
+                if (coin.id === 'btc') volatility = coin.price * 0.03;
+                if (coin.symbol === 'SUS') volatility = coin.price * 0.25; // AMOGUS is chaotic
 
-            npcs.forEach(npc => {
-                let dist = Math.hypot(player.x - npc.x, player.y - npc.y);
-                if (dist < 70) {
-                    dialogueText = npc.talk;
-                    dialogueTimer = 120;
-                    if (!npc.talked) {
-                        npc.talked = true;
-                        unlockBadge('social');
-                    }
-                }
+                const change = (Math.random() - 0.48) * volatility; // slight upward drift bias
+                coin.price = Math.max(0.0001, coin.price + change);
             });
+            renderMarket();
+        }, 1500);
 
-            if (npcs.every(n => n.talked)) {
-                unlockBadge('victory');
-            }
+        // --- Rendering Market UI ---
+        function renderMarket() {
+            document.getElementById('cash-balance').innerText = `$${cash.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            const grid = document.getElementById('market-grid');
+            grid.innerHTML = '';
 
-            if (dialogueTimer > 0) dialogueTimer--;
+            coins.forEach(coin => {
+                const holdingValue = coin.holdings * coin.price;
+                const card = document.createElement('div');
+                card.className = 'coin-card';
+                card.innerHTML = `
+                    <div class="coin-header">
+                        <span class="coin-name">${coin.name}</span>
+                        <span class="coin-symbol">${coin.symbol}</span>
+                    </div>
+                    <div class="coin-price">$${coin.price < 1 ? coin.price.toFixed(4) : coin.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                    <div class="holding-info">
+                        <span>Owned: ${coin.holdings < 10 ? coin.holdings.toFixed(2) : Math.floor(coin.holdings)}</span>
+                        <span class="holding-val">$${holdingValue.toFixed(2)}</span>
+                    </div>
+                    <div class="coin-actions">
+                        <button class="action-btn" onclick="buyCoin('${coin.id}')">Buy</button>
+                        <button class="sell-btn" onclick="sellCoin('${coin.id}')">Sell</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
         }
 
-        function drawSprite(imgKey, x, y, size) {
-            if (images[imgKey] && images[imgKey].complete && images[imgKey].naturalWidth !== 0) {
-                ctx.drawImage(images[imgKey], x - size/2, y - size/2, size, size);
+        // --- Trading Logic ---
+        function buyCoin(coinId) {
+            const coin = coins.find(c => c.id === coinId);
+            const buyAmount = coin.price * 10; // buy 10 units worth or check cash
+            
+            // For expensive coins like BTC, buy fractional or single units
+            const cost = coin.price > 1000 ? coin.price * 0.1 : coin.price * 10;
+            const units = coin.price > 1000 ? 0.1 : 10;
+
+            if (cash >= cost) {
+                cash -= cost;
+                coin.holdings += units;
+                playSound('buy');
+                renderMarket();
             } else {
-                ctx.fillStyle = '#ffd700';
-                ctx.fillRect(x - size/2, y - size/2, size, size);
+                alert("Not enough cash, bro!");
             }
         }
 
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        function sellCoin(coinId) {
+            const coin = coins.find(c => c.id === coinId);
+            const unitsToSell = coin.price > 1000 ? 0.1 : 10;
 
-            // Floor tiles grid
-            ctx.strokeStyle = "#28223d";
-            for(let x = 0; x < canvas.width; x += 50) ctx.strokeRect(x, 0, 50, canvas.height);
-
-            // NPCs
-            npcs.forEach(npc => drawSprite(npc.id, npc.x, npc.y, 60));
-
-            // Player
-            drawSprite('musa', player.x, player.y, player.size);
-
-            // Dialogue Box
-            ctx.fillStyle = "rgba(24, 21, 36, 0.95)";
-            ctx.fillRect(50, 420, 700, 50);
-            ctx.strokeStyle = "#ffd700";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(50, 420, 700, 50);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "7px 'Press Start 2P'";
-            ctx.fillText(dialogueText, 65, 450);
+            if (coin.holdings >= unitsToSell) {
+                coin.holdings -= unitsToSell;
+                cash += coin.price * unitsToSell;
+                playSound('sell');
+                renderMarket();
+            } else {
+                alert("You don't own enough of this coin to sell!");
+            }
         }
 
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
+        // --- Custom Coin Creator ---
+        function createCustomCoin() {
+            const nameInput = document.getElementById('custom-name');
+            const symbolInput = document.getElementById('custom-symbol');
+            
+            const name = nameInput.value.trim();
+            const symbol = symbolInput.value.trim().toUpperCase();
+
+            if (!name || !symbol) {
+                alert("Please enter a valid coin name and symbol!");
+                return;
+            }
+
+            if (cash < 500) {
+                alert("Launching a coin costs $500 USD fee!");
+                return;
+            }
+
+            cash -= 500;
+            playSound('launch');
+
+            const newCoin = {
+                id: 'custom_' + Date.now(),
+                name: name,
+                symbol: symbol,
+                price: parseFloat((Math.random() * 5 + 0.1).toFixed(2)),
+                holdings: 100, // free starter pack of your own coin
+                history: []
+            };
+
+            coins.push(newCoin);
+            nameInput.value = '';
+            symbolInput.value = '';
+            renderMarket();
         }
-        gameLoop();
+
+        function resetGame() {
+            if (confirm("Are you sure you want to declare bankruptcy and reset?")) {
+                cash = 1000.00;
+                coins = [
+                    { id: 'doge', name: 'Dogecoin', symbol: 'DOGE', price: 0.12, holdings: 1000, history: [] },
+                    { id: 'gold', name: 'Gold Coin', symbol: 'GLD', price: 1850.50, holdings: 0, history: [] },
+                    { id: 'btc', name: 'Bitcoin', symbol: 'BTC', price: 64200.00, holdings: 0, history: [] },
+                    { id: 'amogus', name: 'AMOGUS coin', symbol: 'SUS', price: 0.0069, holdings: 0, history: [] }
+                ];
+                renderMarket();
+            }
+        }
+
+        // Initial paint
+        renderMarket();
     </script>
 </body>
 </html>
