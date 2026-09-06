@@ -17,6 +17,33 @@
 
         h1 { font-size: 30px; color: #ff4500; text-shadow: 4px 4px 0px #000; margin-bottom: 15px; }
 
+        /* TOP BUTTONS */
+        .top-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .top-nav a {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 8px;
+            color: white;
+            background: #181524;
+            border: 3px solid #3d355c;
+            padding: 10px 12px;
+            text-decoration: none;
+            box-shadow: 3px 3px 0px #000;
+            transition: all 0.2s;
+        }
+
+        .top-nav a:hover {
+            transform: translate(-2px, -2px);
+            border-color: #ff4500;
+            color: #ff4500;
+        }
+
         .login-box {
             background: #181524; border: 3px solid #ff4500; padding: 15px;
             margin-bottom: 25px; box-shadow: 4px 4px 0px #000; text-align: center;
@@ -55,6 +82,13 @@
 <body>
 
     <h1>NET GAMES</h1>
+
+    <!-- TOP BUTTONS -->
+    <div class="top-nav">
+        <a href="https://padlet.com/lightninggamerz144/reviews-s023bha2gv7fp2e3a40m">REVIEWS</a>
+        <a href="https://docs.google.com/forms/d/e/1FAIpQLSfIS5Al5C97GqqdZbjFL5VhBS3sEbQbK9vMPjeSYDyNhkSRIA/viewform?usp=publish-editor">GAMEMODE SUGGESTIONS</a>
+        <a href="https://netplayerofficial.weebly.com/">ABOUT ME</a>
+    </div>
 
     <!-- ACCOUNT LOGIN BOX -->
     <div class="login-box">
