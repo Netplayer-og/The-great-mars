@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEYBOARD TEST - Astro's World Edition</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0d1117;
+            color: #c9d1d9;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Side Control Panel */
+        #sidebar {
+            width: 320px;
+            background-color: #161b22;
+            border-right: 2px solid #30363d;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+            overflow-y: auto;
+        }
+        h1 {
+            font-size: 1.4rem;
+            color: #58a6ff;
+            border-bottom: 2px solid #30363d;
+            padding-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .stats-box {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        .stat-val {
+            color: #58a6ff;
+            font-weight: bold;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-size: 0.85rem;
+            color: #8b949e;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px;
+            background-color: #21262d;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background-color: #30363d;
+            border-color: #8b949e;
+        }
+        button.active {
+            background-color: #1f6feb;
+            color: white;
+            border-color: #58a6ff;
+        }
+
+        /* Main Workspace */
+        #main-content {
+            flex-grow: 1;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: radial-gradient(circle at center, #1b2230 0%, #0d1117 80%);
+            overflow-y: auto;
+            align-items: center;
+        }
+        .section-title {
+            font-size: 1.1rem;
+            color: #58a6ff;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        /* Type Test Card */
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        #type-prompt {
+            font-size: 1.1rem;
+            line-height: 1.5;
+            color: #8b949e;
+            font-family: monospace;
+            background: #0d1117;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #30363d;
+        }
+        #type-input {
+            width: 100%;
+            padding: 10px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #fff;
+            font-size: 1rem;
+            border-radius: 6px;
+            outline: none;
+        }
+        #type-input:focus {
+            border-color: #58a6ff;
+        }
+
+        /* CPS Clicker Box */
+        .cps-box {
+            background: #21262d;
+            border: 2px dashed #30363d;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .cps-box:hover {
+            background: #30363d;
+            border-color: #58a6ff;
+        }
+        .cps-count {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3fb950;
+        }
+
+        /* Virtual Key Detector (Astros World style visualizer) */
+        .keyboard-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 15px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 900px;
+            align-items: center;
+        }
+        .kb-row {
+            display: flex;
+            gap: 6px;
+        }
+        .key {
+            width: 42px;
+            height: 42px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #8b949e;
+            transition: transform 0.05s, background 0.05s, color 0.05s, box-shadow 0.05s;
+        }
+        .key.pressed {
+            background: #58a6ff;
+            color: #0d1117;
+            border-color: #79c0ff;
+            transform: scale(0.92);
+            box-shadow: 0 0 12px #58a6ff;
+        }
+        .key-space {
+            width: 280px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Side Control Panel -->
+    <div id="sidebar">
+        <h1><span>⌨️</span> KEYBOARD TEST</h1>
+
+        <div class="stats-box">
+            <div class="stat-row"><span>Typing Speed:</span> <span id="stat-wpm" class="stat-val">0 WPM</span></div>
+            <div class="stat-row"><span>Click Speed:</span> <span id="stat-cps" class="stat-val">0.0 CPS</span></div>
+            <div class="stat-row"><span>Keys Pressed:</span> <span id="stat-keys" class="stat-val">0</span></div>
+        </div>
+
+        <div class="control-group">
+            <label>Mode Selection</label>
+            <button id="btn-mode-key" class="active" onclick="switchTab('detector')">Key Detector Visualizer</button>
+            <button id="btn-mode-type" onclick="switchTab('type')">Speed Type Test</button>
+        </div>
+
+        <div class="control-group">
+            <label>Audio Feedback</label>
+            <button id="btn-sound" onclick="toggleSound()">Mechanical Sound: ON</button>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div id="main-content">
+        <!-- View 1: Key Detector (Astros World Style) -->
+        <div id="view-detector" style="display:flex; flex-direction:column; gap:20px; width:100%; align-items:center;">
+            <div class="section-title">🕹️ Astros World Real-Time Key Detector</div>
+            <div class="keyboard-layout" id="virtual-keyboard">
+                <!-- Built dynamically via JS -->
+            </div>
+            
+            <div class="card" style="text-align: center;">
+                <label>Mouse Click Per Second (CPS) Test Box</label>
+                <div class="cps-box" id="cps-target">
+                    <div>Click Here Rapidly!</div>
+                    <div class="cps-count" id="cps-display">0.0 CPS</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View 2: Speed Type Test -->
+        <div id="view-type" style="display:none; flex-direction:column; gap:20px; width:100%; align-items:center;">
+            <div class="section-title">⚡ Speed Type Test</div>
+            <div class="card">
+                <div id="type-prompt">The quick brown fox jumps over the lazy dog while playing retro arcade games in outer space.</div>
+                <input type="text" id="type-input" placeholder="Start typing the text above..." oninput="checkTyping(event)">
+                <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:#8b949e;">
+                    <span id="type-status">Status: Waiting for input...</span>
+                    <button onclick="resetTypeTest()" style="padding:4px 10px;">Reset Test</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let soundEnabled = true;
+        let totalKeysPressed = 0;
+
+        // --- Web Audio Mechanical Click Sound Engine ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playKeySound() {
+            if (!soundEnabled) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            const now = audioCtx.currentTime;
+
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(1200, now);
+            osc.frequency.exponentialRampToValueAtTime(200, now + 0.03);
+            gain.gain.setValueAtTime(0.08, now);
+            gain.gain.linearRampToValueAtTime(0.001, now + 0.03);
+            osc.start(now);
+            osc.stop(now + 0.03);
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById('btn-sound');
+            btn.innerText = `Mechanical Sound: ${soundEnabled ? 'ON' : 'OFF'}`;
+            btn.classList.toggle('active', soundEnabled);
+        }
+
+        function switchTab(mode) {
+            document.getElementById('view-detector').style.display = mode === 'detector' ? 'flex' : 'none';
+            document.getElementById('view-type').style.display = mode === 'type' ? 'flex' : 'none';
+            document.getElementById('btn-mode-key').classList.toggle('active', mode === 'detector');
+            document.getElementById('btn-mode-type').classList.toggle('active', mode === 'type');
+        }
+
+        // --- Virtual Keyboard Setup (Astros World Detector) ---
+        const rows = [
+            ["Escape", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12"],
+            ["`", "1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "-", "=", "Backspace"],
+            ["Tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "[", "]", "\\"],
+            ["Caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", ";", "'", "Enter"],
+            ["Shift", "Z", "X", "C", "V", "B", "N", "M", ",", ".", "/", "Shift"],
+            ["Control", "Alt", "Space", "Alt", "Control"]
+        ];
+
+        const keyboardContainer = document.getElementById('virtual-keyboard');
+        const keyElements = {};
+
+        rows.forEach(row => {
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'kb-row';
+            row.forEach(keyText => {
+                const keyEl = document.createElement('div');
+                keyEl.className = 'key';
+                if (keyText === 'Space') keyEl.classList.add('key-space');
+                keyEl.innerText = keyText;
+                rowDiv.appendChild(keyEl);
+
+                // Map key code / identifiers
+                keyElements[keyText.toLowerCase()] = keyEl;
+            });
+            keyboardContainer.appendChild(rowDiv);
+        });
+
+        // Special mapping for event.key / event.code
+        function getKeyElement(e) {
+            const k = e.key.toLowerCase();
+            if (k === ' ') return keyElements['space'];
+            return keyElements[k] || null;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            totalKeysPressed++;
+            document.getElementById('stat-keys').innerText = totalKeysPressed;
+            playKeySound();
+
+            const el = getKeyElement(e);
+            if (el) el.classList.add('pressed');
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const el = getKeyElement(e);
+            if (el) el.classList.remove('pressed');
+        });
+
+        // --- CPS Click Speed Test ---
+        let clickTimestamps = [];
+        const cpsTarget = document.getElementById('cps-target');
+        const cpsDisplay = document.getElementById('cps-display');
+
+        cpsTarget.addEventListener('mousedown', () => {
+            const now = Date.now();
+            clickTimestamps.push(now);
+            playKeySound();
+        });
+
+        setInterval(() => {
+            const now = Date.now();
+            // Filter clicks within the last 1 second
+            clickTimestamps = clickTimestamps.filter(t => now - t < 1000);
+            const cps = clickTimestamps.length;
+            cpsDisplay.innerText = `${cps}.0 CPS`;
+            document.getElementById('stat-cps').innerText = `${cps}.0 CPS`;
+        }, 100);
+
+        // --- Speed Type Test Logic ---
+        const sampleText = "The quick brown fox jumps over the lazy dog while playing retro arcade games in outer space.";
+        let startTime = null;
+
+        function checkTyping(e) {
+            if (!startTime) startTime = Date.now();
+            const inputVal = e.target.value;
+            const prompt = document.getElementById('type-prompt');
+
+            if (inputVal === sampleText) {
+                const timeTaken = (Date.now() - startTime) / 1000 / 60; // in minutes
+                const words = sampleText.split(' ').length;
+                const wpm = Math.round(words / timeTaken);
+                document.getElementById('stat-wpm').innerText = `${wpm} WPM`;
+                document.getElementById('type-status').innerText = `Completed! Final Speed: ${wpm} WPM`;
+            } else {
+                document.getElementById('type-status').innerText = "Typing in progress...";
+            }
+        }
+
+        function resetTypeTest() {
+            document.getElementById('type-input').value = '';
+            document.getElementById('type-status').innerText = "Status: Waiting for input...";
+            startTime = null;
+        }
+    </script>
+</body>
+</html>
