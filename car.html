@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Car Dealer: Property Tycoon Pro</title>
+    <style>
+        :root { --accent: #00d2ff; --gold: #ffd700; --danger: #ff4757; --neon: #ff00ff; --success: #2ecc71; }
+        * { box-sizing: border-box; touch-action: manipulation; -webkit-user-select: none; }
+        body { margin: 0; background: #000; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+        #header { padding: 10px 20px; display: flex; justify-content: space-between; background: #111; border-bottom: 2px solid #333; align-items: center; z-index: 100; }
+        .stats { font-size: 1.1rem; font-weight: bold; color: var(--gold); }
+        .nav { display: flex; gap: 5px; }
+        .btn { padding: 6px 12px; border-radius: 4px; border: 1px solid #444; background: #222; color: #fff; cursor: pointer; font-size: 13px; }
+        .btn.active { background: var(--accent); color: #000; border-color: #fff; font-weight: bold; }
+        #canvas-wrap { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; }
+        canvas { max-width: 100%; max-height: 100%; background: #111; }
+        #log { position: absolute; bottom: 20px; background: rgba(0,0,0,0.9); padding: 8px 20px; border-radius: 20px; border: 1px solid var(--accent); opacity: 0; transition: 0.3s; z-index: 200; pointer-events: none;}
+        #debt-warning { position: absolute; top: 70px; left: 20px; color: var(--danger); font-weight: bold; display: none; background: rgba(0,0,0,0.7); padding: 5px 15px; border-radius: 5px; border: 1px solid var(--danger); }
+    </style>
+</head>
+<body>
+
+<div id="header">
+    <div class="stats">CASH: <span id="money-val">$0</span></div>
+    <div class="nav">
+        <button id="n-dealership" class="btn active" onclick="setS('dealership')">Showroom</button>
+        <button id="n-exterior" class="btn" onclick="setS('exterior')">Curb</button>
+        <button id="n-shop" class="btn" onclick="setS('shop')">Auction</button>
+        <button id="n-upgrades" class="btn" onclick="setS('upgrades')">Office</button>
+        <button id="n-rewards" class="btn" style="color: var(--gold)" onclick="setS('rewards')">🎁 Rewards</button>
+    </div>
+</div>
+
+<div id="debt-warning">⚠️ LOAN: <span id="debt-count">0</span>/5 DELAYS</div>
+
+<div id="canvas-wrap">
+    <canvas id="gameCanvas" width="1000" height="600"></canvas>
+    <div id="log">Saved!</div>
+</div>
+
+<script>
+/** STATE **/
+let state = JSON.parse(localStorage.getItem('carTycoonV11')) || {
+    money: 10000, 
+    inventory: [], 
+    upgrades: { slots: 4, footfall: 1, discount: 1 },
+    exterior: { paint: 0, sign: 0, glass: 0, plants: 0, lights: 0, security: 0 },
+    loan: { active: false, delays: 0, penalty: false },
+    lastReward: 0,
+    bonusFootfall: 0 // Temp reward state
+};
+
+let scene = 'dealership', customers = [], auctionCars = [], decorNPCs = [], richMan = null;
+let lastCollectorVisit = Date.now();
+let rewardMsg = "";
+const canvas = document.getElementById('gameCanvas'), ctx = canvas.getContext('2d');
+
+/** SOUNDS **/
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playSound(f, t, d) {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = t; o.frequency.value = f; g.gain.value = 0.05;
+    o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime + d);
+}
+const sfx = {
+    buy: () => { playSound(400, 'square', 0.2); setTimeout(()=>playSound(600, 'square', 0.3), 50); },
+    sell: () => { playSound(800, 'sine', 0.2); setTimeout(()=>playSound(1200, 'sine', 0.4), 100); },
+    click: () => playSound(200, 'sine', 0.05),
+    angry: () => playSound(100, 'sawtooth', 0.6)
+};
+
+function createNPCs() {
+    decorNPCs = [];
+    for(let i=0; i<10; i++) decorNPCs.push({ x: Math.random()*1000, y: 450+Math.random()*100, speed: (Math.random()*1.5+0.5)*(Math.random()<0.5?1:-1), color: `hsl(${Math.random()*360},50%,50%)`, bob: Math.random()*7 });
+}
+createNPCs();
+
+function drawCar(x, y, car, scale=1) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale);
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(0, 12, 42, 10, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = car.color; ctx.beginPath(); ctx.roundRect(-40, -15, 80, 25, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.beginPath(); ctx.roundRect(-25, -28, 50, 18, 8); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(-25, 10, 8, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(25, 10, 8, 0, 7); ctx.fill();
+    ctx.restore();
+}
+
+/** SCENE: SHOWROOM **/
+function drawDealership() {
+    ctx.fillStyle = '#333'; ctx.fillRect(0, 450, 1000, 150); 
+    ctx.fillStyle = '#666'; ctx.fillRect(0, 420, 1000, 30);
+    const paintColors = ['#1e293b', '#1e3a8a', '#581c87', '#701a75', '#450a0a', '#064e3b', '#111827', '#312e81', '#4c1d95', '#1e1b4b'];
+    ctx.fillStyle = paintColors[state.exterior.paint] || paintColors[0];
+    ctx.fillRect(50, 50, 900, 370); 
+    ctx.strokeStyle = '#475569'; ctx.lineWidth = 10; ctx.strokeRect(50, 50, 900, 370);
+    ctx.fillStyle = '#cbd5e1'; ctx.fillRect(80, 250, 840, 160);
+
+    let activeSlots = state.loan.penalty ? Math.max(1, state.upgrades.slots - 2) : state.upgrades.slots;
+    for(let i=0; i < activeSlots; i++) {
+        let x = 180 + (i % 4) * 210;
+        if(state.inventory[i]) drawCar(x, 350, state.inventory[i], 1.2);
+    }
+
+    if(richMan) {
+        ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(richMan.x, richMan.y, 20, 0, 7); ctx.fill(); 
+        ctx.fillStyle = '#fff'; ctx.font="bold 12px Sans"; ctx.textAlign="center";
+        ctx.fillText("COLLECTOR", richMan.x, richMan.y - 45);
+        ctx.fillStyle = "#22c55e"; ctx.fillRect(richMan.x-40, richMan.y-35, 35, 20); 
+        ctx.fillStyle = "#ef4444"; ctx.fillRect(richMan.x+5, richMan.y-35, 35, 20); 
+        ctx.fillStyle="white"; ctx.font="10px Sans"; ctx.fillText("PAY", richMan.x-22, richMan.y-22); ctx.fillText("WAIT", richMan.x+22, richMan.y-22);
+    }
+
+    customers.forEach(c => {
+        let targetX = 180 + (c.carIdx % 4) * 210;
+        let targetY = 380;
+        let dx = targetX - c.x;
+        let dy = targetY - c.y;
+        let dist = Math.hypot(dx, dy);
+        if(dist > 5) {
+            c.x += (dx/dist) * 2.5;
+            c.y += (dy/dist) * 2.5;
+            c.walking = true;
+        } else {
+            c.walking = false;
+        }
+        ctx.fillStyle = '#ffdbac'; 
+        ctx.beginPath(); 
+        ctx.arc(c.x, c.y + (c.walking ? Math.sin(Date.now()*0.01)*3 : 0), 12, 0, 7); 
+        ctx.fill();
+        if(!c.walking) {
+            ctx.fillStyle = "white"; ctx.font="bold 12px Sans"; ctx.textAlign="center";
+            ctx.fillText("CLICK TO SELL", c.x, c.y - 20);
+        }
+    });
+}
+
+/** SCENE: EXTERIOR **/
+function drawExterior() {
+    ctx.fillStyle = '#0f172a'; ctx.fillRect(0,0,1000,600);
+    ctx.fillStyle = '#334155'; ctx.fillRect(0, 450, 1000, 150); 
+    const paintColors = ['#475569', '#1e3a8a', '#581c87', '#701a75', '#450a0a', '#064e3b', '#111827', '#312e81', '#4c1d95', '#1e1b4b'];
+    ctx.fillStyle = paintColors[state.exterior.paint] || paintColors[0];
+    ctx.fillRect(100, 50, 600, 400);
+    const winColor = state.exterior.glass > 0 ? `rgba(0, 210, 255, ${0.1 + (state.exterior.glass * 0.08)})` : "rgba(255,255,255,0.1)";
+    ctx.fillStyle = winColor; ctx.fillRect(150, 120, 500, 200);
+    if(state.exterior.sign > 0) { 
+        ctx.shadowBlur = state.exterior.sign * 3; ctx.shadowColor = "magenta";
+        ctx.fillStyle = "white"; ctx.font=`bold ${30 + state.exterior.sign}px Sans`; ctx.textAlign="center"; 
+        ctx.fillText("SUPER CARS", 400, 100); ctx.shadowBlur = 0;
+    }
+    ctx.fillStyle = 'rgba(0,0,0,0.85)'; ctx.fillRect(710, 10, 280, 580);
+    ctx.fillStyle = "white"; ctx.font = "bold 18px Sans"; ctx.textAlign = "center";
+    ctx.fillText("PROPERTY UPGRADES", 850, 40);
+    const extUpgs = [{k: 'paint', n: 'Custom Paint'}, {k: 'sign', n: 'Neon Signage'}, {k: 'glass', n: 'Lux Windows'}, {k: 'plants', n: 'Landscaping'}, {k: 'lights', n: 'Floodlights'}, {k: 'security', n: 'CCTV/Security'}];
+    extUpgs.forEach((u, i) => {
+        let y = 60 + i * 85;
+        let lv = state.exterior[u.k];
+        let cost = (i + 1) * 2000 * (lv + 1);
+        ctx.fillStyle = '#222'; ctx.beginPath(); ctx.roundRect(720, y, 260, 75, 5); ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "13px Sans"; ctx.textAlign="left";
+        ctx.fillText(`${u.n} Lv ${lv}/10`, 730, y + 20);
+        ctx.fillStyle = "#444"; ctx.fillRect(730, y+28, 240, 6);
+        ctx.fillStyle = varColor('--accent'); ctx.fillRect(730, y+28, (lv/10)*240, 6);
+        if(lv < 10) {
+            ctx.fillStyle = state.money >= cost ? varColor('--success') : '#666';
+            ctx.beginPath(); ctx.roundRect(730, y+42, 240, 25, 3); ctx.fill();
+            ctx.fillStyle = "black"; ctx.font="bold 11px Sans"; ctx.textAlign="center";
+            ctx.fillText(`UPGRADE: $${cost.toLocaleString()}`, 850, y+59);
+        } else {
+            ctx.fillStyle = varColor('--gold'); ctx.font="bold 12px Sans"; ctx.textAlign="center";
+            ctx.fillText("MAX LEVEL", 850, y+60);
+        }
+    });
+}
+
+/** SCENE: REWARDS **/
+function drawRewards() {
+    ctx.fillStyle = '#1e1b4b'; ctx.fillRect(0,0,1000,600);
+    ctx.fillStyle = 'white'; ctx.font="bold 40px Sans"; ctx.textAlign="center";
+    ctx.fillText("DAILY REWARDS", 500, 100);
+    
+    let now = Date.now();
+    let cooldown = 60000;
+    let elapsed = now - state.lastReward;
+    let ready = elapsed >= cooldown;
+
+    ctx.fillStyle = '#312e81'; ctx.beginPath(); ctx.roundRect(250, 150, 500, 300, 20); ctx.fill();
+    
+    if(!ready) {
+        let timeLeft = Math.ceil((cooldown - elapsed)/1000);
+        ctx.fillStyle = '#94a3b8'; ctx.font="24px Sans";
+        ctx.fillText(`Next Reward In: ${timeLeft}s`, 500, 280);
+        ctx.fillStyle = '#444'; ctx.beginPath(); ctx.roundRect(350, 350, 300, 60, 10); ctx.fill();
+        ctx.fillStyle = '#666'; ctx.fillText("LOCKED", 500, 390);
+    } else {
+        ctx.shadowBlur = 20; ctx.shadowColor = varColor('--gold');
+        ctx.fillStyle = varColor('--gold'); ctx.beginPath(); ctx.roundRect(350, 350, 300, 60, 10); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = 'black'; ctx.font="bold 24px Sans";
+        ctx.fillText("CLAIM REWARD", 500, 390);
+        ctx.fillStyle = 'white'; ctx.font="20px Sans";
+        ctx.fillText("Your loyalty reward is ready!", 500, 280);
+    }
+
+    if(rewardMsg) {
+        ctx.fillStyle = varColor('--accent'); ctx.font="bold 22px Sans";
+        ctx.fillText(rewardMsg, 500, 520);
+    }
+}
+
+function drawAuctionWarehouse() {
+    ctx.fillStyle = '#2d1b15'; ctx.fillRect(0, 0, 1000, 500);
+    ctx.fillStyle = '#334155'; ctx.fillRect(0, 400, 1000, 200);
+    decorNPCs.forEach(n => {
+        n.x += n.speed; n.bob += 0.1; if(n.x > 1100 || n.x < -100) n.speed *= -1;
+        ctx.fillStyle = n.color; ctx.beginPath(); ctx.arc(n.x, n.y + Math.sin(n.bob)*4, 12, 0, 7); ctx.fill();
+    });
+    auctionCars.forEach((car, i) => {
+        if(!car) return;
+        let x = 180 + i * 320;
+        ctx.fillStyle = '#451a03'; ctx.beginPath(); ctx.roundRect(x-120, 280, 240, 140, 5); ctx.fill();
+        drawCar(x, 330, car, 2.0);
+        ctx.fillStyle = '#059669'; ctx.beginPath(); ctx.roundRect(x-50, 375, 100, 35, 5); ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "bold 14px Sans"; ctx.textAlign="center"; ctx.fillText("PLACE BID", x, 398);
+        ctx.fillStyle = varColor('--gold'); ctx.fillText("$"+car.buyPrice.toLocaleString(), x, 250);
+    });
+}
+
+function drawUpgrades() {
+    ctx.fillStyle = '#0f172a'; ctx.fillRect(0,0,1000,600);
+    ctx.textAlign = "left"; ctx.fillStyle = "white"; ctx.font = "bold 32px Sans"; ctx.fillText("Office & Financing", 50, 80);
+    const upgs = [{k: 'slots', n: 'Showroom Expansion', d: 'Increase parking slots', cost: 5000 * state.upgrades.slots}, {k: 'discount', n: 'Master Negotiator', d: 'Lower auction prices (-5%)', cost: 4000 * state.upgrades.discount}, {k: 'loan', n: 'Request $4,000 Loan', d: 'Pay back $5,000 to the Collector', cost: 'BANK'}];
+    upgs.forEach((u, i) => {
+        let y = 140 + i * 130;
+        ctx.fillStyle = '#1e293b'; ctx.beginPath(); ctx.roundRect(50, y, 900, 100, 10); ctx.fill();
+        ctx.fillStyle = "white"; ctx.font = "bold 20px Sans"; ctx.fillText(u.n, 80, y + 40);
+        ctx.fillStyle = "#94a3b8"; ctx.font = "14px Sans"; ctx.fillText(u.d, 80, y + 70);
+        ctx.fillStyle = (u.k === 'loan' && state.loan.active) ? "#444" : "#00d2ff";
+        ctx.beginPath(); ctx.roundRect(680, y+25, 240, 50, 8); ctx.fill();
+        ctx.fillStyle = "black"; ctx.font = "bold 18px Sans"; ctx.textAlign="center";
+        let label = u.k === 'loan' ? (state.loan.active ? "LOCKED" : "TAKE LOAN") : `BUY: $${u.cost}`;
+        ctx.fillText(label, 800, y+57); ctx.textAlign = "left";
+    });
+}
+
+/** INPUT **/
+canvas.addEventListener('mousedown', (e) => {
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (1000 / r.width), my = (e.clientY - r.top) * (600 / r.height);
+    sfx.click();
+
+    if(scene === 'rewards' && mx > 350 && mx < 650 && my > 350 && my < 410) {
+        let now = Date.now();
+        if(now - state.lastReward >= 60000) {
+            let rnd = Math.random();
+            if(rnd < 0.4) {
+                let win = 2000 + Math.floor(Math.random()*3000);
+                state.money += win; rewardMsg = `You won $${win.toLocaleString()}!`;
+            } else if (rnd < 0.7) {
+                state.bonusFootfall = 500; // 500 frames of high traffic
+                rewardMsg = "Ad Campaign Active! More customers incoming!";
+            } else {
+                state.money += 1000; rewardMsg = "Small Reward: $1,000 + Cleaning Services!";
+            }
+            state.lastReward = now; sfx.sell(); save();
+        }
+    }
+
+    if(scene === 'exterior' && mx > 730 && mx < 970) {
+        const extKeys = ['paint','sign','glass','plants','lights','security'];
+        extKeys.forEach((k, i) => {
+            let y = 60 + i * 85;
+            let cost = (i + 1) * 2000 * (state.exterior[k] + 1);
+            if(my > y+42 && my < y+67 && state.exterior[k] < 10 && state.money >= cost) {
+                state.money -= cost; state.exterior[k]++; sfx.buy(); save();
+            }
+        });
+    }
+
+    if(scene === 'upgrades' && mx > 680 && mx < 920) {
+        if(my > 165 && my < 215) {
+            let cost = 5000 * state.upgrades.slots; if(state.money >= cost) { state.money -= cost; state.upgrades.slots++; save(); }
+        } else if(my > 295 && my < 345) {
+            let cost = 4000 * state.upgrades.discount; if(state.money >= cost) { state.money -= cost; state.upgrades.discount++; save(); }
+        } else if(my > 425 && my < 475 && !state.loan.active) {
+            state.money += 4000; state.loan.active = true; lastCollectorVisit = Date.now(); sfx.buy(); save();
+        }
+    }
+
+    if(scene === 'dealership' && richMan) {
+        if(mx > richMan.x-40 && mx < richMan.x-5 && my > richMan.y-35 && my < richMan.y-15) {
+            if(state.money >= 5000) { state.money -= 5000; state.loan.active = false; state.loan.penalty = false; richMan = null; sfx.sell(); save(); }
+        } else if(mx > richMan.x+5 && mx < richMan.x+40 && my > richMan.y-35 && my < richMan.y-15) {
+            state.loan.delays++; if(state.loan.delays >= 5) { state.loan.penalty = true; sfx.angry(); } richMan = null; lastCollectorVisit = Date.now(); save();
+        }
+    }
+
+    if(scene === 'dealership') {
+        customers.forEach((c, i) => {
+            if(!c.walking && Math.hypot(mx - c.x, my - c.y) < 40) {
+                let sold = state.inventory.splice(c.carIdx, 1)[0];
+                state.money += sold.resale; customers.splice(i, 1); sfx.sell(); save();
+            }
+        });
+    }
+
+    if(scene === 'shop') {
+        auctionCars.forEach((c, i) => {
+            if(c && mx > 130+i*320 && mx < 230+i*320 && my > 375 && my < 410) {
+                let limit = state.loan.penalty ? Math.max(1, state.upgrades.slots - 2) : state.upgrades.slots;
+                if(state.inventory.length < limit && state.money >= c.buyPrice) {
+                    state.money -= c.buyPrice; state.inventory.push(c); auctionCars[i] = null; sfx.buy(); save();
+                }
+            }
+        });
+    }
+});
+
+function setS(s) { scene = s; document.querySelectorAll('.btn').forEach(b => b.classList.remove('active')); document.getElementById('n-'+s).classList.add('active'); if(s === 'shop') auctionCars = [createCar(), createCar(), createCar()]; if(s !== 'rewards') rewardMsg = ""; }
+
+function createCar() {
+    const p = Math.floor(7000 * (0.8 + Math.random()) * (1 - (state.upgrades.discount * 0.05)));
+    return { type: 'CAR', color: `hsl(${Math.random()*360},60%,50%)`, buyPrice: p, resale: Math.floor(p * 1.5) };
+}
+
+function save() { localStorage.setItem('carTycoonV11', JSON.stringify(state)); const l = document.getElementById('log'); l.style.opacity = 1; setTimeout(()=>l.style.opacity=0, 1000); }
+function varColor(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+function render() {
+    ctx.clearRect(0,0,1000,600);
+    document.getElementById('money-val').innerText = `$${state.money.toLocaleString()}`;
+    document.getElementById('debt-warning').style.display = state.loan.active ? 'block' : 'none';
+    document.getElementById('debt-count').innerText = state.loan.delays;
+
+    if(scene === 'dealership') {
+        drawDealership();
+        if(state.loan.active && !richMan && (Date.now() - lastCollectorVisit > 25000)) richMan = { x: 500, y: 330 };
+        
+        let spawnChance = 0.005;
+        if(state.bonusFootfall > 0) { spawnChance = 0.02; state.bonusFootfall--; }
+
+        let appeal = 1 + (state.exterior.paint + state.exterior.sign + state.exterior.glass + state.exterior.plants + state.exterior.lights + state.exterior.security) * 0.5;
+        if(state.inventory.length > customers.length && Math.random() < spawnChance * appeal && customers.length < 5) {
+            let occupiedSlots = customers.map(c => c.carIdx);
+            let availableSlots = [];
+            for(let i=0; i<state.inventory.length; i++) if(!occupiedSlots.includes(i)) availableSlots.push(i);
+            if(availableSlots.length > 0) {
+                let slot = availableSlots[Math.floor(Math.random()*availableSlots.length)];
+                customers.push({ x: Math.random() < 0.5 ? -50 : 1050, y: 480, carIdx: slot, walking: true });
+            }
+        }
+    } else if(scene === 'shop') drawAuctionWarehouse();
+    else if(scene === 'exterior') drawExterior();
+    else if(scene === 'rewards') drawRewards();
+    else drawUpgrades();
+    requestAnimationFrame(render);
+}
+setS('dealership'); render();
+</script>
+</body>
+</html>
