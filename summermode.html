@@ -3,226 +3,323 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summer Mode - Escape of Mars</title>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>SUMMER SMASH - Beach Chaos Simulator</title>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
         body {
-            margin: 0; padding: 0;
-            background-color: #0b0a10; color: #fff;
-            font-family: 'Press Start 2P', cursive;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            min-height: 100vh; overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #051923;
+            color: #fff;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
         }
 
-        h1 { color: #00b4d8; font-size: 24px; margin-bottom: 10px; text-shadow: 3px 3px 0px #000; }
-        .back-link { position: absolute; top: 15px; left: 15px; color: #aaa; text-decoration: none; font-size: 10px; }
-        .back-link:hover { color: #00b4d8; }
+        /* Side Control Panel */
+        #sidebar {
+            width: 300px;
+            background-color: #003554;
+            border-right: 2px solid #006494;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+        h1 {
+            font-size: 1.4rem;
+            color: #ffb703;
+            border-bottom: 2px solid #006494;
+            padding-bottom: 10px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        label {
+            font-size: 0.85rem;
+            color: #caf0f8;
+            font-weight: bold;
+        }
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 8px;
+        }
+        button {
+            padding: 12px;
+            background-color: #006494;
+            border: 1px solid #48cae4;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background-color: #0077b6;
+            transform: translateY(-1px);
+        }
+        button.active {
+            background-color: #ffb703;
+            color: #003554;
+            border-color: #fb8500;
+        }
+        
+        /* Stats Dashboard */
+        .stats-box {
+            background: #001d3d;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #006494;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+        }
+        .stat-val {
+            color: #ffb703;
+            font-weight: bold;
+        }
 
+        /* Beach Canvas Area */
+        #beach-container {
+            flex-grow: 1;
+            position: relative;
+            background: linear-gradient(to bottom, #87ceeb 50%, #f4d06f 50%);
+            cursor: crosshair;
+        }
         canvas {
-            border: 4px solid #00b4d8;
-            background-color: #e9c46a;
-            box-shadow: 6px 6px 0px #000;
-            image-rendering: pixelated;
+            display: block;
         }
-
-        /* BADGE POPUP NOTIFICATION STYLES */
-        #badge-toast {
-            position: fixed; top: 20px; right: -350px;
-            background: #181524; border: 3px solid #ffd700;
-            box-shadow: 4px 4px 0px #000; padding: 12px;
-            display: flex; align-items: center; gap: 12px;
-            z-index: 999; transition: right 0.4s ease-in-out;
-            border-radius: 4px; font-family: 'Press Start 2P', cursive;
+        
+        .instructions {
+            font-size: 0.8rem;
+            color: #ade8f4;
+            line-height: 1.4;
+            margin-top: auto;
+            background: #001d3d;
+            padding: 10px;
+            border-radius: 6px;
         }
-        #badge-toast.show { right: 20px; }
-        #badge-toast img { width: 40px; height: 40px; image-rendering: pixelated; }
-        .badge-info h4 { margin: 0; font-size: 8px; color: #ffd700; }
-        .badge-info p { margin: 4px 0 0 0; font-size: 6px; color: #aaa; }
     </style>
 </head>
 <body>
 
-    <a href="index.html" class="back-link">⬅ MAIN MENU</a>
-    <h1>SUMMER MODE</h1>
+    <!-- Side Control Panel -->
+    <div id="sidebar">
+        <h1>🌴 SUMMER SMASH</h1>
+        
+        <div class="control-group">
+            <label>Select Summer Activity</label>
+            <div class="btn-grid">
+                <button id="btn-coconut" class="active" onclick="setTool('coconut')">🥥 Kick Coconut</button>
+                <button id="btn-castle" onclick="setTool('castle')">🏰 Build Sand Castle</button>
+                <button id="btn-kid" onclick="setTool('kid')">👶 Annoy Beach Kids</button>
+            </div>
+        </div>
 
-    <canvas id="canvas" width="800" height="500"></canvas>
+        <div class="control-group">
+            <label>Chaos Stats</label>
+            <div class="stats-box">
+                <div class="stat-row"><span>Coconuts Kicked:</span> <span id="stat-coconut" class="stat-val">0</span></div>
+                <div class="stat-row"><span>Castles Built:</span> <span id="stat-castle" class="stat-val">0</span></div>
+                <div class="stat-row"><span>Kids Annoyed:</span> <span id="stat-kid" class="stat-val">0</span></div>
+            </div>
+        </div>
 
-    <!-- BADGE UNLOCK NOTIFICATION TOAST -->
-    <div id="badge-toast">
-        <img id="badge-icon" src="" alt="Badge">
-        <div class="badge-info">
-            <h4 id="badge-title">BADGE UNLOCKED!</h4>
-            <p id="badge-desc">You unlocked a new achievement.</p>
+        <div class="instructions">
+            <strong>How to Play:</strong><br>
+            • Click anywhere on the beach to perform your selected summer activity!<br>
+            • Kick coconuts into the ocean, erect towering castles, or poke unsuspecting vacation kids.
         </div>
     </div>
 
+    <!-- Canvas Viewport -->
+    <div id="beach-container"></div>
+
     <script>
-        const canvas = document.getElementById('canvas');
+        const container = document.getElementById('beach-container');
+        const canvas = document.createElement('canvas');
+        container.appendChild(canvas);
         const ctx = canvas.getContext('2d');
 
-        const badgeAudio = new Audio('SFX/applepay.mp3');
-        const user = localStorage.getItem('mars_user') || "Guest";
+        let currentTool = 'coconut';
+        let stats = { coconut: 0, castle: 0, kid: 0 };
+        let entities = [];
 
-        const badgeData = {
-            social: { title: "SOCIAL BUTTERFLY", desc: "Listened to beach chatter", icon: "Pixelgame/socialbadge.png" },
-            chillax: { title: "CHILLAX CHAMP", desc: "Took a dip in the ocean", icon: "Pixelgame/chillaxbadge.png" },
-            victory: { title: "MARS CONQUEROR", desc: "Talked with everyone at the beach", icon: "Pixelgame/victorybadge.png" },
-            memorial: { title: "MARTIAN MEMORIAL", desc: "Fell in battle on Mars", icon: "Pixelgame/memorialbadge.png" }
-        };
+        function resizeCanvas() {
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
 
-        function unlockBadge(badgeKey) {
-            let userBadges = JSON.parse(localStorage.getItem(user + '_badges') || '{}');
-            if (userBadges[badgeKey]) return;
-
-            userBadges[badgeKey] = true;
-            localStorage.setItem(user + '_badges', JSON.stringify(userBadges));
-
-            badgeAudio.currentTime = 0;
-            badgeAudio.play().catch(e => {});
-
-            let badge = badgeData[badgeKey];
-            if (badge) {
-                document.getElementById('badge-icon').src = badge.icon;
-                document.getElementById('badge-title').innerText = badge.title;
-                document.getElementById('badge-desc').innerText = badge.desc;
-
-                let toast = document.getElementById('badge-toast');
-                toast.classList.add('show');
-                setTimeout(() => toast.classList.remove('show'), 3500);
-            }
+        function setTool(tool) {
+            currentTool = tool;
+            ['coconut', 'castle', 'kid'].forEach(t => {
+                document.getElementById(`btn-${t}`).classList.remove('active');
+            });
+            document.getElementById(`btn-${tool}`).classList.add('active');
+            playSfx('click');
         }
 
+        // --- Web Audio Sound Engine ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(type) {
+        function playSfx(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            let now = audioCtx.currentTime;
+            const now = audioCtx.currentTime;
 
-            if (type === 'dialogue') {
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(350 + Math.random() * 200, now);
-                gain.gain.setValueAtTime(0.08, now);
-                gain.gain.linearRampToValueAtTime(0, now + 0.05);
+            if (type === 'coconut') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'castle') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.linearRampToValueAtTime(450, now + 0.15);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now); osc.stop(now + 0.15);
+            } else if (type === 'kid') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.linearRampToValueAtTime(400, now + 0.2);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now); osc.stop(now + 0.2);
+            } else if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, now);
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
                 osc.start(now); osc.stop(now + 0.05);
             }
         }
 
-        const images = {};
-        const imageSources = {
-            musa: 'Pixelgame/musa.png',
-            mas: 'Pixelgame/mas.png',
-            net: 'Pixelgame/net.png',
-            wasi: 'Pixelgame/wasi.png',
-            nyx: 'Pixelgame/nyx.png',
-            timmy: 'Pixelgame/timmy.png'
-        };
+        // --- Entity Objects ---
+        class BeachEntity {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.age = 0;
+                
+                if (type === 'coconut') {
+                    this.vx = (Math.random() - 0.5) * 6;
+                    this.vy = -Math.random() * 4 - 2;
+                    this.radius = 18;
+                } else if (type === 'kid') {
+                    this.vx = (Math.random() - 0.5) * 2;
+                    this.vy = 0;
+                    this.text = ["WAAAH!", "Mommy!", "Hey! 🏖️", "Stop it!"][Math.floor(Math.random() * 4)];
+                }
+            }
 
-        for (let key in imageSources) {
-            images[key] = new Image();
-            images[key].src = imageSources[key];
-        }
-
-        const player = { x: 100, y: 250, size: 60, speed: 4 };
-
-        // RESTORED ALL FRIENDS ON THE BEACH WITH TALK DIALOGUES
-        const npcs = [
-            { id: 'mas', x: 250, y: 120, talk: "Mas: Bro the sun on Mars is hitting different today!", talked: false },
-            { id: 'net', x: 400, y: 150, talk: "Net: Beach Wi-Fi is somehow faster than school Wi-Fi.", talked: false },
-            { id: 'wasi', x: 280, y: 350, talk: "Wasi: Anyone brought cold Fanta to the beach?", talked: false },
-            { id: 'nyx', x: 420, y: 380, talk: "Nyx: No SAB trading at the beach, only relaxation!", talked: false },
-            { id: 'timmy', x: 620, y: 250, talk: "Timmy: WATER GRIDDY IN THE OCEAN HAHAA!", talked: false }
-        ];
-
-        let dialogueText = "Walk up to your friends at the beach to talk!";
-        let dialogueTimer = 0;
-        const keys = {};
-
-        window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
-        function update() {
-            if ((keys['w'] || keys['arrowup']) && player.y > 40) player.y -= player.speed;
-            if ((keys['s'] || keys['arrowdown']) && player.y < canvas.height - 40) player.y += player.speed;
-            if ((keys['a'] || keys['arrowleft']) && player.x > 40) player.x -= player.speed;
-            if ((keys['d'] || keys['arrowright']) && player.x < canvas.width - 40) player.x += player.speed;
-
-            // Talk proximity detection
-            npcs.forEach(npc => {
-                let dist = Math.hypot(player.x - npc.x, player.y - npc.y);
-                if (dist < 70) {
-                    if (dialogueText !== npc.talk) playSound('dialogue');
-                    dialogueText = npc.talk;
-                    dialogueTimer = 120;
-                    if (!npc.talked) {
-                        npc.talked = true;
-                        unlockBadge('social');
+            update() {
+                this.age++;
+                if (this.type === 'coconut') {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    this.vy += 0.3; // gravity
+                    // bounce off floor
+                    if (this.y > canvas.height - 40) {
+                        this.y = canvas.height - 40;
+                        this.vy *= -0.5;
+                        this.vx *= 0.8;
                     }
                 }
+            }
+
+            draw() {
+                ctx.save();
+                if (this.type === 'coconut') {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#5c4033';
+                    ctx.fill();
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#3e2723';
+                    ctx.stroke();
+                    ctx.closePath();
+                } else if (this.type === 'castle') {
+                    ctx.fillStyle = '#e9c46a';
+                    ctx.fillRect(this.x - 30, this.y - 40, 60, 40);
+                    ctx.fillStyle = '#f4a261';
+                    // towers
+                    ctx.fillRect(this.x - 35, this.y - 60, 15, 60);
+                    ctx.fillRect(this.x + 20, this.y - 60, 15, 60);
+                } else if (this.type === 'kid') {
+                    // Simple cartoon kid face / body
+                    ctx.font = "28px sans-serif";
+                    ctx.fillText("👶", this.x - 14, this.y);
+                    if (this.age < 60) {
+                        ctx.fillStyle = '#ff595e';
+                        ctx.font = "bold 14px sans-serif";
+                        ctx.fillText(this.text, this.x - 20, this.y - 20);
+                    }
+                }
+                ctx.restore();
+            }
+        }
+
+        // Click interaction
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Restrict activity to sand area (bottom half)
+            if (y < canvas.height * 0.45 && currentTool !== 'coconut') {
+                return; // keep castles and kids on the sand
+            }
+
+            stats[currentTool]++;
+            document.getElementById(`stat-${currentTool}`).innerText = stats[currentTool];
+            playSfx(currentTool);
+
+            entities.push(new BeachEntity(x, y, currentTool));
+        });
+
+        // Animation Loop
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Ocean & Sand background split lines
+            ctx.fillStyle = '#48cae4';
+            ctx.fillRect(0, 0, canvas.width, canvas.height * 0.5);
+            ctx.fillStyle = '#f4d06f';
+            ctx.fillRect(0, canvas.height * 0.5, canvas.width, canvas.height * 0.5);
+
+            // Update and draw entities
+            entities.forEach(ent => {
+                ent.update();
+                ent.draw();
             });
 
-            if (npcs.every(n => n.talked)) {
-                unlockBadge('victory');
-            }
-
-            // Unlock Chillax Badge when entering ocean (x > 520)
-            if (player.x > 520) {
-                unlockBadge('chillax');
-            }
-
-            if (dialogueTimer > 0) dialogueTimer--;
+            requestAnimationFrame(animate);
         }
 
-        function drawSprite(imgKey, x, y, size) {
-            if (images[imgKey] && images[imgKey].complete && images[imgKey].naturalWidth !== 0) {
-                ctx.drawImage(images[imgKey], x - size/2, y - size/2, size, size);
-            } else {
-                ctx.fillStyle = '#00b4d8';
-                ctx.fillRect(x - size/2, y - size/2, size, size);
-            }
-        }
-
-        function draw() {
-            // Beach Sand Background
-            ctx.fillStyle = "#e9c46a";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Ocean Area
-            ctx.fillStyle = "#00b4d8";
-            ctx.fillRect(520, 0, 280, canvas.height);
-
-            // Draw all friends
-            npcs.forEach(npc => drawSprite(npc.id, npc.x, npc.y, 60));
-
-            // Player
-            drawSprite('musa', player.x, player.y, player.size);
-
-            // Dialogue Box
-            ctx.fillStyle = "rgba(24, 21, 36, 0.95)";
-            ctx.fillRect(50, 420, 700, 50);
-            ctx.strokeStyle = "#00b4d8";
-            ctx.lineWidth = 2;
-            ctx.strokeRect(50, 420, 700, 50);
-
-            ctx.fillStyle = "#ffffff";
-            ctx.font = "7px 'Press Start 2P'";
-            ctx.fillText(dialogueText, 65, 450);
-
-            // HUD
-            ctx.fillStyle = "#000";
-            ctx.font = "8px 'Press Start 2P'";
-            ctx.fillText(player.x > 520 ? "STATUS: CHILLIN' IN WATER 🌊" : "STATUS: ON THE BEACH 🏖️", 20, 30);
-        }
-
-        function gameLoop() {
-            update();
-            draw();
-            requestAnimationFrame(gameLoop);
-        }
-        gameLoop();
+        animate();
     </script>
 </body>
 </html>
