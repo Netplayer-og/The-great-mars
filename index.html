@@ -13,9 +13,15 @@
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
             min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
         }
 
-        h1 { font-size: 30px; color: #ff4500; text-shadow: 4px 4px 0px #000; margin-bottom: 15px; }
+        h1 { 
+            font-size: 30px; 
+            color: #ff4500; 
+            text-shadow: 4px 4px 0px #000; 
+            margin-bottom: 15px; 
+        }
 
         /* TOP BUTTONS */
         .top-nav {
@@ -45,18 +51,32 @@
         }
 
         .login-box {
-            background: #181524; border: 3px solid #ff4500; padding: 15px;
-            margin-bottom: 25px; box-shadow: 4px 4px 0px #000; text-align: center;
+            background: #181524; 
+            border: 3px solid #ff4500; 
+            padding: 15px;
+            margin-bottom: 25px; 
+            box-shadow: 4px 4px 0px #000; 
+            text-align: center;
         }
 
         input[type="text"] {
-            font-family: 'Press Start 2P', cursive; padding: 8px; font-size: 8px;
-            background: #0b0a10; border: 2px solid #332d4a; color: #fff; margin-right: 5px;
+            font-family: 'Press Start 2P', cursive; 
+            padding: 8px; 
+            font-size: 8px;
+            background: #0b0a10; 
+            border: 2px solid #332d4a; 
+            color: #fff; 
+            margin-right: 5px;
         }
 
         .btn-login {
-            font-family: 'Press Start 2P', cursive; padding: 8px 12px; font-size: 8px;
-            background: #ff4500; color: white; border: none; cursor: pointer;
+            font-family: 'Press Start 2P', cursive; 
+            padding: 8px 12px; 
+            font-size: 8px;
+            background: #ff4500; 
+            color: white; 
+            border: none; 
+            cursor: pointer;
         }
 
         .modes-container {
@@ -71,12 +91,270 @@
         }
 
         .mode-card {
-            background: #1c182d; border: 4px solid #3d355c; padding: 15px;
-            width: 180px; text-align: center; cursor: pointer; text-decoration: none; color: white;
-            box-shadow: 5px 5px 0px #000; transition: all 0.2s;
+            background: #1c182d; 
+            border: 4px solid #3d355c; 
+            padding: 15px;
+            width: 180px; 
+            text-align: center; 
+            cursor: pointer; 
+            text-decoration: none; 
+            color: white;
+            box-shadow: 5px 5px 0px #000; 
+            transition: all 0.2s;
             box-sizing: border-box;
         }
-        .mode-card:hover { transform: translate(-2px, -2px); border-color: #ff4500; }
+
+        .mode-card:hover { 
+            transform: translate(-2px, -2px); 
+            border-color: #ff4500; 
+        }
+
+
+        /* ========================= */
+        /* SETTINGS SIDE BAR */
+        /* ========================= */
+
+        .settings-tab {
+            position: fixed;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #181524;
+            border: 3px solid #ff4500;
+            border-right: none;
+            padding: 14px 10px;
+            color: white;
+            font-size: 9px;
+            cursor: pointer;
+            z-index: 1001;
+            box-shadow: -3px 3px 0px #000;
+            writing-mode: vertical-rl;
+        }
+
+        .settings-tab:hover {
+            color: #ff4500;
+        }
+
+        .settings-panel {
+            position: fixed;
+            right: -300px;
+            top: 0;
+            width: 280px;
+            height: 100vh;
+            background: #181524;
+            border-left: 4px solid #ff4500;
+            box-shadow: -6px 0px 0px #000;
+            z-index: 1000;
+            transition: right 0.3s ease;
+            box-sizing: border-box;
+            padding: 25px 20px;
+            overflow-y: auto;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-title {
+            font-size: 16px;
+            color: #ff4500;
+            margin-bottom: 25px;
+            text-shadow: 3px 3px #000;
+        }
+
+        .settings-section {
+            margin-bottom: 25px;
+        }
+
+        .settings-label {
+            font-size: 9px;
+            color: #aaa;
+            display: block;
+            margin-bottom: 12px;
+        }
+
+        .setting-option {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #0f0c1b;
+            color: white;
+            border: 2px solid #3d355c;
+            font-family: inherit;
+            font-size: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: 0.2s;
+        }
+
+        .setting-option:hover {
+            border-color: #ff4500;
+            transform: translateX(-3px);
+        }
+
+        .setting-option.selected {
+            border-color: #ff4500;
+            background: #29213d;
+            color: #ff4500;
+        }
+
+        .close-settings {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .close-settings:hover {
+            color: #ff4500;
+        }
+
+
+        /* ========================= */
+        /* THEMES */
+        /* ========================= */
+
+        body.theme-red {
+            background: #210707;
+        }
+
+        body.theme-red .login-box,
+        body.theme-red .top-nav a,
+        body.theme-red .mode-card,
+        body.theme-red .settings-panel,
+        body.theme-red .settings-tab {
+            background: #321010;
+        }
+
+        body.theme-red .mode-card,
+        body.theme-red .top-nav a {
+            border-color: #7a2222;
+        }
+
+        body.theme-pink {
+            background: #210d1a;
+        }
+
+        body.theme-pink .login-box,
+        body.theme-pink .top-nav a,
+        body.theme-pink .mode-card,
+        body.theme-pink .settings-panel,
+        body.theme-pink .settings-tab {
+            background: #35152a;
+        }
+
+        body.theme-pink h1,
+        body.theme-pink .settings-title {
+            color: #ff69b4;
+        }
+
+        body.theme-pink .login-box,
+        body.theme-pink .settings-panel,
+        body.theme-pink .settings-tab {
+            border-color: #ff69b4;
+        }
+
+        body.theme-blue {
+            background: #071525;
+        }
+
+        body.theme-blue .login-box,
+        body.theme-blue .top-nav a,
+        body.theme-blue .mode-card,
+        body.theme-blue .settings-panel,
+        body.theme-blue .settings-tab {
+            background: #10243a;
+        }
+
+        body.theme-blue h1,
+        body.theme-blue .settings-title {
+            color: #38aaff;
+        }
+
+        body.theme-blue .login-box,
+        body.theme-blue .settings-panel,
+        body.theme-blue .settings-tab {
+            border-color: #38aaff;
+        }
+
+        body.theme-green {
+            background: #071c12;
+        }
+
+        body.theme-green .login-box,
+        body.theme-green .top-nav a,
+        body.theme-green .mode-card,
+        body.theme-green .settings-panel,
+        body.theme-green .settings-tab {
+            background: #0e2b1d;
+        }
+
+        body.theme-green h1,
+        body.theme-green .settings-title {
+            color: #35d07f;
+        }
+
+        body.theme-green .login-box,
+        body.theme-green .settings-panel,
+        body.theme-green .settings-tab {
+            border-color: #35d07f;
+        }
+
+
+        /* ========================= */
+        /* FONTS */
+        /* ========================= */
+
+        body.font-press {
+            font-family: 'Press Start 2P', cursive;
+        }
+
+        body.font-comic {
+            font-family: "Comic Sans MS", "Comic Sans", cursive;
+        }
+
+        body.font-italic {
+            font-family: Arial, sans-serif;
+            font-style: italic;
+        }
+
+        body.font-innocent {
+            font-family: "Trebuchet MS", sans-serif;
+        }
+
+        body.font-comic input,
+        body.font-comic button,
+        body.font-comic .top-nav a,
+        body.font-comic .settings-panel,
+        body.font-comic .settings-tab,
+        body.font-comic .setting-option {
+            font-family: "Comic Sans MS", "Comic Sans", cursive;
+        }
+
+        body.font-italic input,
+        body.font-italic button,
+        body.font-italic .top-nav a,
+        body.font-italic .settings-panel,
+        body.font-italic .settings-tab,
+        body.font-italic .setting-option {
+            font-family: Arial, sans-serif;
+            font-style: italic;
+        }
+
+        body.font-innocent input,
+        body.font-innocent button,
+        body.font-innocent .top-nav a,
+        body.font-innocent .settings-panel,
+        body.font-innocent .settings-tab,
+        body.font-innocent .setting-option {
+            font-family: "Trebuchet MS", sans-serif;
+        }
     </style>
 </head>
 <body>
@@ -153,7 +431,73 @@
         </a>
     </div>
 
+
+    <!-- SETTINGS TAB -->
+    <div class="settings-tab" onclick="toggleSettings()">
+        ⚙ SETTINGS
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="settings-panel" id="settings-panel">
+
+        <button class="close-settings" onclick="toggleSettings()">✕</button>
+
+        <div class="settings-title">⚙ SETTINGS</div>
+
+        <!-- THEME -->
+        <div class="settings-section">
+            <span class="settings-label">THEME</span>
+
+            <button class="setting-option" data-theme="classic" onclick="setTheme('classic')">
+                🟣 CLASSIC
+            </button>
+
+            <button class="setting-option" data-theme="red" onclick="setTheme('red')">
+                🔴 RED
+            </button>
+
+            <button class="setting-option" data-theme="pink" onclick="setTheme('pink')">
+                🩷 PINK
+            </button>
+
+            <button class="setting-option" data-theme="blue" onclick="setTheme('blue')">
+                🔵 BLUE
+            </button>
+
+            <button class="setting-option" data-theme="green" onclick="setTheme('green')">
+                🟢 GREEN
+            </button>
+        </div>
+
+        <!-- FONT -->
+        <div class="settings-section">
+            <span class="settings-label">FONT</span>
+
+            <button class="setting-option" data-font="press" onclick="setFont('press')">
+                🎮 PRESS START
+            </button>
+
+            <button class="setting-option" data-font="comic" onclick="setFont('comic')">
+                ✏️ COMIC SANS
+            </button>
+
+            <button class="setting-option" data-font="italic" onclick="setFont('italic')">
+                ✨ ITALIC SANS
+            </button>
+
+            <button class="setting-option" data-font="innocent" onclick="setFont('innocent')">
+                🌸 INNOCENT
+            </button>
+        </div>
+
+    </div>
+
+
     <script>
+        /* ========================= */
+        /* ACCOUNT */
+        /* ========================= */
+
         function loadUser() {
             let u = localStorage.getItem('mars_user') || "Guest";
             document.getElementById('active-user').innerText = u;
@@ -168,7 +512,83 @@
             }
         }
 
+
+        /* ========================= */
+        /* SETTINGS */
+        /* ========================= */
+
+        function toggleSettings() {
+            document.getElementById('settings-panel').classList.toggle('open');
+        }
+
+
+        function setTheme(theme) {
+            document.body.classList.remove(
+                'theme-red',
+                'theme-pink',
+                'theme-blue',
+                'theme-green'
+            );
+
+            if (theme !== 'classic') {
+                document.body.classList.add('theme-' + theme);
+            }
+
+            localStorage.setItem('net_theme', theme);
+            updateSelectedButtons();
+        }
+
+
+        function setFont(font) {
+            document.body.classList.remove(
+                'font-press',
+                'font-comic',
+                'font-italic',
+                'font-innocent'
+            );
+
+            document.body.classList.add('font-' + font);
+
+            localStorage.setItem('net_font', font);
+            updateSelectedButtons();
+        }
+
+
+        function updateSelectedButtons() {
+            let currentTheme = localStorage.getItem('net_theme') || 'classic';
+            let currentFont = localStorage.getItem('net_font') || 'press';
+
+            document.querySelectorAll('[data-theme]').forEach(button => {
+                button.classList.remove('selected');
+
+                if (button.dataset.theme === currentTheme) {
+                    button.classList.add('selected');
+                }
+            });
+
+            document.querySelectorAll('[data-font]').forEach(button => {
+                button.classList.remove('selected');
+
+                if (button.dataset.font === currentFont) {
+                    button.classList.add('selected');
+                }
+            });
+        }
+
+
+        function loadSettings() {
+            let savedTheme = localStorage.getItem('net_theme') || 'classic';
+            let savedFont = localStorage.getItem('net_font') || 'press';
+
+            setTheme(savedTheme);
+            setFont(savedFont);
+            updateSelectedButtons();
+        }
+
+
         loadUser();
+        loadSettings();
     </script>
+
 </body>
 </html>
