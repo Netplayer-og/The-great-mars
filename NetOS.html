@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>NetOS v7</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+body{
+margin:0;
+background:black;
+color:white;
+font-family:'Press Start 2P', monospace;
+overflow:hidden;
+}
+
+/* Boot */
+#bootScreen{
+width:100vw;
+height:100vh;
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+.title{margin-top:50px;font-size:48px;}
+.subtitle{margin-top:20px;font-size:16px;}
+
+pre{
+margin-top:60px;
+font-size:10px;
+line-height:10px;
+font-family:monospace;
+}
+
+/* OS */
+#osScreen{
+display:none;
+flex-direction:column;
+height:100vh;
+padding:20px;
+box-sizing:border-box;
+}
+
+#terminal{
+flex:1;
+overflow-y:auto;
+white-space:pre-wrap;
+font-size:14px;
+margin-bottom:10px;
+}
+
+.input-line{
+display:flex;
+align-items:center;
+}
+
+.prompt{
+margin-right:10px;
+}
+
+input{
+flex:1;
+background:black;
+color:white;
+border:1px solid white;
+padding:8px;
+outline:none;
+font-family:'Press Start 2P', monospace;
+font-size:14px;
+}
+
+/* Notes */
+#noteArea{
+display:none;
+width:100%;
+height:200px;
+background:black;
+color:white;
+border:1px solid white;
+margin-bottom:10px;
+padding:10px;
+font-family:'Press Start 2P', monospace;
+}
+
+/* Games */
+#gameContainer{
+display:none;
+position:absolute;
+top:0;left:0;
+width:100vw;height:100vh;
+background:black;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+}
+canvas{
+background:black;
+border:2px solid white;
+}
+
+/* Close Button */
+.closeBtn{
+position:absolute;
+top:10px;
+right:10px;
+background:red;
+color:white;
+border:none;
+padding:8px 12px;
+font-family:'Press Start 2P', monospace;
+cursor:pointer;
+z-index:1000;
+}
+</style>
+</head>
+<body>
+
+<div id="bootScreen">
+<div class="title">NetOS</div>
+<div class="subtitle">Press 5 to boot</div>
+<pre id="donut"></pre>
+</div>
+
+<div id="osScreen">
+<div id="terminal"></div>
+<textarea id="noteArea"></textarea>
+<div class="input-line">
+<div class="prompt">&gt;</div>
+<input id="commandInput" type="text">
+</div>
+</div>
+
+<div id="gameContainer"></div>
+
+<script>
+
+/* ================= DONUT ================= */
+let A=0,B=0;
+const donut=document.getElementById("donut");
+
+function renderDonut(){
+let b=[],z=[];
+const width=80,height=22;
+const chars=".,-~:;=!*#$@";
+for(let i=0;i<width*height;i++){b[i]=" ";z[i]=0;}
+for(let j=0;j<6.28;j+=0.07){
+for(let i=0;i<6.28;i+=0.02){
+const c=Math.sin(i),d=Math.cos(j),
+e=Math.sin(A),f=Math.sin(j),
+g=Math.cos(A),h=d+2,
+D=1/(c*h*e+f*g+5),
+l=Math.cos(i),m=Math.cos(B),
+n=Math.sin(B),
+t=c*h*g-f*e,
+x=Math.floor(width/2+30*D*(l*h*m-t*n)),
+y=Math.floor(height/2+15*D*(l*h*n+t*m)),
+o=x+width*y,
+N=Math.floor(8*((f*e-c*d*g)*m-c*d*e-f*g-l*d*n));
+if(y>=0&&y<height&&x>=0&&x<width&&D>z[o]){
+z[o]=D;b[o]=chars[N>0?N:0];
+}}}
+let out="";
+for(let k=0;k<width*height;k++)out+=(k%width?b[k]:"\n");
+donut.textContent=out;
+A+=0.04;B+=0.02;
+}
+setInterval(renderDonut,30);
+
+/* ================= BOOT ================= */
+const boot=document.getElementById("bootScreen");
+const os=document.getElementById("osScreen");
+const terminal=document.getElementById("terminal");
+const input=document.getElementById("commandInput");
+const noteArea=document.getElementById("noteArea");
+const gameContainer=document.getElementById("gameContainer");
+
+let currentApp = null; // "snake", "draw", "note"
+
+document.addEventListener("keydown",e=>{
+if(e.key==="5" && boot.style.display!=="none"){
+boot.style.display="none";
+os.style.display="flex";
+setTimeout(()=>input.focus(),100);
+typeOutput("NetOS Ready\nType 'brat -help'\n\n");
+}
+});
+
+/* ================= TERMINAL ================= */
+function typeOutput(text,cb){
+let i=0;
+const inter=setInterval(()=>{
+terminal.innerHTML+=text[i];
+terminal.scrollTop=terminal.scrollHeight;
+i++;
+if(i>=text.length){clearInterval(inter);if(cb)cb();}
+},15);
+}
+
+input.addEventListener("keydown",function(e){
+if(e.key==="Enter"){
+const cmd=input.value.trim();
+if(!cmd)return;
+input.value="";
+input.disabled=true;
+animateCommand(cmd);
+}
+});
+
+function animateCommand(cmd){
+let i=0;
+terminal.innerHTML+="> ";
+const typer=setInterval(()=>{
+terminal.innerHTML+=cmd[i];
+terminal.scrollTop=terminal.scrollHeight;
+i++;
+if(i>=cmd.length){
+clearInterval(typer);
+terminal.innerHTML+="\n";
+setTimeout(()=>{
+handleCommand(cmd);
+input.disabled=false;
+input.focus();
+},150);
+}
+},20);
+}
+
+/* ================= COMMANDS ================= */
+function handleCommand(cmd){
+
+if(cmd==="brat -help"){
+typeOutput(
+`brat -help
+brat -note NAME
+brat -save NAME
+brat -load NAME
+brat -shutdown
+brat -files
+brat -version
+brat -game snake
+brat -game draw
+brat -close\n\n`);
+}
+
+else if(cmd.startsWith("brat -note ")){
+currentApp = "note";
+noteArea.style.display="block";
+noteArea.value="";
+typeOutput("Note opened.\n");
+}
+
+else if(cmd.startsWith("brat -save ")){
+const name=cmd.split(" ")[2];
+localStorage.setItem("note_"+name,noteArea.value);
+typeOutput("Note saved.\n");
+}
+
+else if(cmd.startsWith("brat -load ")){
+const name=cmd.split(" ")[2];
+const data=localStorage.getItem("note_"+name);
+if(data){
+currentApp = "note";
+noteArea.style.display="block";
+noteArea.value=data;
+typeOutput("Note loaded.\n");
+}else typeOutput("Note not found.\n");
+}
+
+else if(cmd==="brat -shutdown"){
+typeOutput("Shutting down...\n",()=>setTimeout(()=>location.reload(),1000));
+}
+
+else if(cmd==="brat -game snake"){
+currentApp = "snake";
+startSnake();
+}
+
+else if(cmd==="brat -game draw"){
+currentApp = "draw";
+startDraw();
+}
+
+else if(cmd==="brat -close"){
+closeApp();
+}
+
+if(cmd==="brat -files"){
+typeOutput(
+`SnakeWB.deb
+
+DrawNO.deb
+
+Notes (Folder)
+
+System32
+
+FontColor.exe\n\n`);
+}
+
+if(cmd==="brat -version"){
+typeOutput(
+`NETOS-VERSION= v7 STANDARD
+[No Updates Found..]\n\n`);
+}
+
+else typeOutput("Unknown command.\n");
+}
+
+/* ================= APP CLOSE FUNCTION ================= */
+function closeApp(){
+if(currentApp === "snake" || currentApp === "draw"){
+gameContainer.style.display="none";
+os.style.display="flex";
+currentApp = null;
+typeOutput("Application closed.\n");
+}
+else if(currentApp === "note"){
+noteArea.style.display="none";
+currentApp = null;
+typeOutput("Note closed.\n");
+}
+else{
+typeOutput("No application is currently open.\n");
+}
+}
+
+/* ================= SNAKE ================= */
+function startSnake(){
+os.style.display="none";
+gameContainer.style.display="flex";
+gameContainer.innerHTML=`
+<button class="closeBtn" onclick="closeApp()">CLOSE</button>
+<canvas id='snake' width='400' height='400'></canvas>
+`;
+const canvas=document.getElementById("snake");
+const ctx=canvas.getContext("2d");
+let snake=[{x:200,y:200}],dx=20,dy=0;
+let food={x:100,y:100};
+
+document.onkeydown=e=>{
+if(e.key==="ArrowUp"){dx=0;dy=-20;}
+if(e.key==="ArrowDown"){dx=0;dy=20;}
+if(e.key==="ArrowLeft"){dx=-20;dy=0;}
+if(e.key==="ArrowRight"){dx=20;dy=0;}
+if(e.key==="Escape")closeApp();
+};
+
+function draw(){
+ctx.fillStyle="black";ctx.fillRect(0,0,400,400);
+ctx.fillStyle="white";
+snake.forEach(s=>ctx.fillRect(s.x,s.y,18,18));
+ctx.fillRect(food.x,food.y,18,18);
+let head={x:snake[0].x+dx,y:snake[0].y+dy};
+snake.unshift(head);
+if(head.x===food.x && head.y===food.y){
+food.x=Math.floor(Math.random()*20)*20;
+food.y=Math.floor(Math.random()*20)*20;
+}else snake.pop();
+}
+setInterval(draw,100);
+}
+
+/* ================= DRAW ================= */
+function startDraw(){
+os.style.display="none";
+gameContainer.style.display="flex";
+gameContainer.innerHTML=`
+<button class="closeBtn" onclick="closeApp()">CLOSE</button>
+<canvas id='draw' width='600' height='400'></canvas>
+`;
+const canvas=document.getElementById("draw");
+const ctx=canvas.getContext("2d");
+ctx.strokeStyle="white";
+ctx.lineWidth=2;
+let drawing=false;
+
+canvas.onmousedown=()=>drawing=true;
+canvas.onmouseup=()=>drawing=false;
+canvas.onmousemove=e=>{
+if(!drawing)return;
+ctx.lineTo(e.offsetX,e.offsetY);
+ctx.stroke();
+};
+
+document.onkeydown=e=>{if(e.key==="Escape")closeApp();};
+}
+</script>
+</body>
+</html>
