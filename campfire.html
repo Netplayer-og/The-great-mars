@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Campfire — Stay Awhile</title>
+  <style>
+    /* ==========================================================================
+       RESET & BASE STYLES
+       ========================================================================== */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    :root {
+      --bg-sky: #050814;
+      --fire-intensity: 0.75;
+      --fire-glow-color: rgba(255, 120, 30, 0.4);
+      --ui-bg: rgba(15, 20, 32, 0.65);
+      --ui-border: rgba(255, 200, 140, 0.15);
+      --text-main: #f5ebe0;
+      --text-sub: #c3b091;
+      --accent: #ff9d42;
+      --accent-hover: #ffb86c;
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-sky);
+      color: var(--text-main);
+    }
+
+    /* ==========================================================================
+       CANVAS & SCENE
+       ========================================================================== */
+    #viewport {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    #bg-canvas { z-index: 1; }
+    #fx-canvas { z-index: 2; }
+
+    /* Scene Glow Overlay */
+    .scene-glow {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 3;
+      background: radial-gradient(circle at 50% 70%, var(--fire-glow-color) 0%, rgba(0,0,0,0) 70%);
+      opacity: var(--fire-intensity);
+      transition: opacity 0.5s ease;
+      mix-blend-mode: screen;
+    }
+
+    .vignette {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 4;
+      background: radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 50%, rgba(3, 6, 15, 0.7) 100%);
+    }
+
+    /* Interactive Props in Scene */
+    .campsite-prop {
+      position: absolute;
+      z-index: 5;
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s;
+      filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));
+    }
+    .campsite-prop:hover {
+      transform: scale(1.08);
+      filter: drop-shadow(0 6px 15px rgba(255,160,50,0.3));
+    }
+
+    #lantern-prop {
+      bottom: 22%;
+      right: 22%;
+      width: 44px;
+      height: 60px;
+    }
+
+    #mug-prop {
+      bottom: 18%;
+      left: 28%;
+      width: 32px;
+      height: 32px;
+    }
+
+    #blanket-prop {
+      bottom: 14%;
+      left: 20%;
+      width: 80px;
+      height: 45px;
+    }
+
+    /* Roasting Stick Visual Container */
+    #roasting-stick-container {
+      position: absolute;
+      bottom: 30%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      z-index: 6;
+      pointer-events: none;
+      transition: opacity 0.5s ease, transform 0.1s ease-out;
+      opacity: 0;
+    }
+    #roasting-stick-container.active {
+      opacity: 1;
+    }
+
+    .stick-graphic {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 12px;
+      height: 280px;
+      background: linear-gradient(90deg, #3d2314, #5c3821, #2b170c);
+      border-radius: 6px;
+      transform-origin: bottom center;
+      transform: rotate(-35deg) translateY(-20px);
+      box-shadow: -4px 4px 10px rgba(0,0,0,0.5);
+    }
+
+    .food-graphic {
+      position: absolute;
+      top: 10px;
+      left: -14px;
+      width: 40px;
+      height: 40px;
+      font-size: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: filter 0.3s ease, transform 0.2s ease;
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.4));
+    }
+
+    /* ==========================================================================
+       UI INTERFACE OVERLAY
+       ========================================================================== */
+    #ui-layer {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 24px;
+    }
+
+    /* Header */
+    header {
+      pointer-events: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .brand {
+      background: var(--ui-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--ui-border);
+      padding: 12px 20px;
+      border-radius: var(--radius-lg);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    .brand h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .brand p {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+      margin-top: 2px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    /* Buttons */
+    .icon-btn, .btn-primary {
+      background: var(--ui-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--ui-border);
+      color: var(--text-main);
+      padding: 12px 18px;
+      border-radius: var(--radius-lg);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .icon-btn {
+      padding: 12px;
+      border-radius: 50%;
+      width: 46px;
+      height: 46px;
+      justify-content: center;
+    }
+
+    .icon-btn:hover, .btn-primary:hover {
+      background: rgba(30, 40, 60, 0.8);
+      border-color: rgba(255, 200, 140, 0.3);
+      color: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .icon-btn:active, .btn-primary:active {
+      transform: translateY(0);
+    }
+
+    /* Fire Info / Meters HUD */
+    .hud-meters {
+      pointer-events: auto;
+      background: var(--ui-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--ui-border);
+      padding: 14px 20px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 200px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .meter-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .meter-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--text-sub);
+      text-transform: uppercase;
+    }
+    .meter-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .meter-fill {
+      height: 100%;
+      width: 75%;
+      border-radius: 4px;
+      transition: width 0.4s ease, background-color 0.4s ease;
+    }
+    #fire-fill { background: linear-gradient(90deg, #ff4500, #ff9d42); }
+    #wood-fill { background: linear-gradient(90deg, #8b5a2b, #cd853f); }
+
+    /* Bottom Control Dock */
+    footer {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+    }
+
+    /* Notification Toast */
+    #toast-msg {
+      background: rgba(10, 15, 25, 0.85);
+      border: 1px solid var(--accent);
+      color: var(--text-main);
+      padding: 8px 18px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      letter-spacing: 0.5px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(255, 150, 50, 0.2);
+    }
+    #toast-msg.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .control-dock {
+      display: flex;
+      gap: 12px;
+      background: var(--ui-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--ui-border);
+      padding: 8px;
+      border-radius: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      max-width: 100%;
+      overflow-x: auto;
+    }
+
+    .dock-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      padding: 10px 18px;
+      border-radius: 22px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .dock-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .dock-btn.active, .dock-btn:active {
+      background: var(--accent);
+      color: #0d111a;
+      box-shadow: 0 4px 12px rgba(255, 157, 66, 0.4);
+    }
+
+    /* ==========================================================================
+       MODAL / PANEL OVERLAYS
+       ========================================================================== */
+    .modal-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 20;
+      background: rgba(5, 8, 16, 0.65);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: rgba(18, 24, 38, 0.92);
+      border: 1px solid var(--ui-border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 520px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      transform: scale(0.95);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      overflow: hidden;
+    }
+
+    .modal-overlay.open .modal-card {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 1.2rem;
+      letter-spacing: 1px;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-sub);
+      font-size: 1.5rem;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .close-btn:hover { color: var(--text-main); }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Grids & Cards in Modals */
+    .grid-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+    }
+
+    .option-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .option-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .option-card.selected {
+      background: rgba(255, 157, 66, 0.15);
+      border-color: var(--accent);
+    }
+
+    .option-card .icon { font-size: 2rem; margin-bottom: 8px; }
+    .option-card .title { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+    .option-card .sub { font-size: 0.75rem; color: var(--text-sub); margin-top: 4px; }
+
+    /* Settings Sliders */
+    .setting-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .setting-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+    .setting-slider {
+      width: 100%;
+      accent-color: var(--accent);
+      background: rgba(255,255,255,0.1);
+      height: 6px;
+      border-radius: 3px;
+      outline: none;
+    }
+
+    /* Cooking Active Overlay Panel */
+    #cooking-hud {
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--ui-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--ui-border);
+      padding: 16px 24px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      z-index: 12;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      width: 320px;
+    }
+    #cooking-hud.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .cook-controls {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .cook-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .cook-btn:hover { background: rgba(255, 255, 255, 0.18); }
+
+    /* Start Overlay */
+    #start-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 50;
+      background: #050814;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 24px;
+      transition: opacity 0.8s ease;
+    }
+    #start-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #start-screen h1 {
+      font-size: 3rem;
+      letter-spacing: 4px;
+      color: var(--accent);
+      text-transform: uppercase;
+      text-shadow: 0 0 20px rgba(255, 157, 66, 0.4);
+    }
+    #start-screen p {
+      font-size: 1.1rem;
+      color: var(--text-sub);
+      font-style: italic;
+    }
+
+    /* Cooking Result Card Modal */
+    #result-card {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    #result-card .food-icon { font-size: 4rem; }
+    #result-card h3 { font-size: 1.3rem; color: var(--accent); }
+
+    /* Keybind Hint */
+    .key-hint {
+      font-size: 0.7rem;
+      opacity: 0.6;
+      background: rgba(255,255,255,0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      #ui-layer { padding: 12px; }
+      .brand h1 { font-size: 1.1rem; }
+      .hud-meters { padding: 10px 14px; min-width: 150px; }
+      .dock-btn { padding: 8px 12px; font-size: 0.8rem; }
+      .dock-btn span.label { display: none; }
+      .key-hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="viewport">
+    <!-- Render Canvases -->
+    <canvas id="bg-canvas"></canvas>
+    <canvas id="fx-canvas"></canvas>
+
+    <!-- Visual Overlays -->
+    <div class="scene-glow" id="scene-glow"></div>
+    <div class="vignette"></div>
+
+    <!-- Interactive Campsite Props -->
+    <div id="lantern-prop" class="campsite-prop" title="Toggle Lantern" aria-label="Toggle Lantern">
+      <svg viewBox="0 0 40 55" width="100%" height="100%">
+        <path d="M12 12 L28 12 L25 5 L15 5 Z" fill="#2b1a0e"/>
+        <path d="M8 18 L32 18 L28 45 L12 45 Z" fill="rgba(255, 220, 130, 0.8)" id="lantern-glass"/>
+        <path d="M6 16 L34 16 L34 20 L6 20 Z" fill="#4a2e18"/>
+        <path d="M10 45 L30 45 L32 52 L8 52 Z" fill="#2b1a0e"/>
+        <circle cx="20" cy="30" r="6" fill="#ffb834" id="lantern-bulb"/>
+      </svg>
+    </div>
+
+    <div id="mug-prop" class="campsite-prop" title="Warm Mug" aria-label="Warm Mug">
+      <svg viewBox="0 0 30 30" width="100%" height="100%">
+        <rect x="5" y="8" width="16" height="18" rx="3" fill="#c44536"/>
+        <path d="M21 12 C 26 12, 26 22, 21 22" stroke="#c44536" stroke-width="3" fill="none"/>
+        <path d="M8 5 Q 11 2, 9 0" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" fill="none"/>
+        <path d="M14 5 Q 17 2, 15 0" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" fill="none"/>
+      </svg>
+    </div>
+
+    <div id="blanket-prop" class="campsite-prop" title="Cozy Blanket" aria-label="Cozy Blanket">
+      <svg viewBox="0 0 80 45" width="100%" height="100%">
+        <path d="M5 20 Q 40 5, 75 20 Q 60 40, 5 35 Z" fill="#2e5b70"/>
+        <path d="M10 22 Q 40 10, 70 22" stroke="#e09f3e" stroke-width="2" fill="none"/>
+      </svg>
+    </div>
+
+    <!-- Interactive Roasting Stick Container -->
+    <div id="roasting-stick-container">
+      <div class="stick-graphic" id="stick-graphic">
+        <div class="food-graphic" id="food-on-stick">🍖</div>
+      </div>
+    </div>
+
+    <!-- UI Layer -->
+    <div id="ui-layer">
+      <header>
+        <div class="brand">
+          <h1>Campfire</h1>
+          <p>Stay awhile.</p>
+        </div>
+
+        <div class="top-actions">
+          <div class="hud-meters">
+            <div class="meter-row">
+              <div class="meter-label">
+                <span>Fire Strength</span>
+                <span id="fire-val">75%</span>
+              </div>
+              <div class="meter-bar">
+                <div class="meter-fill" id="fire-fill"></div>
+              </div>
+            </div>
+            <div class="meter-row">
+              <div class="meter-label">
+                <span>Wood Supply</span>
+                <span id="wood-val">60%</span>
+              </div>
+              <div class="meter-bar">
+                <div class="meter-fill" id="wood-fill"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙️</button>
+        </div>
+      </header>
+
+      <footer>
+        <div id="toast-msg">The fire crackles warmly...</div>
+
+        <nav class="control-dock">
+          <button class="dock-btn" id="btn-stoke">
+            🔥 <span class="label">Stoke</span> <span class="key-hint">F</span>
+          </button>
+          <button class="dock-btn" id="btn-addwood">
+            🪵 <span class="label">Add Wood</span> <span class="key-hint">W</span>
+          </button>
+          <button class="dock-btn" id="btn-cook">
+            🍖 <span class="label">Cook</span> <span class="key-hint">C</span>
+          </button>
+          <button class="dock-btn" id="btn-atmo">
+            🌙 <span class="label">Atmosphere</span> <span class="key-hint">A</span>
+          </button>
+          <button class="dock-btn" id="btn-journal">
+            📖 <span class="label">Recipes</span>
+          </button>
+        </nav>
+      </footer>
+    </div>
+
+    <!-- Cooking HUD (Active while roasting) -->
+    <div id="cooking-hud">
+      <div style="font-size:0.85rem; font-weight:700; color:var(--text-sub); text-transform:uppercase;">
+        Roasting: <span id="cook-food-name" style="color:var(--accent);">Marshmallow</span>
+      </div>
+      <div class="meter-bar" style="width:100%; height:10px;">
+        <div class="meter-fill" id="cook-progress-fill" style="width:0%; background:linear-gradient(90deg, #3a7bd5, #3a6073);"></div>
+      </div>
+      <div style="font-size:0.8rem; color:var(--text-main);" id="cook-status-text">Heat: Perfect</div>
+      <div class="cook-controls">
+        <button class="cook-btn" id="cook-near-btn">Closer</button>
+        <button class="cook-btn" id="cook-far-btn">Further</button>
+        <button class="cook-btn" id="cook-rotate-btn">Rotate</button>
+        <button class="cook-btn" id="cook-done-btn" style="background:var(--accent); color:#000;">Finish</button>
+      </div>
+    </div>
+
+    <!-- MODAL: Atmosphere & Environment -->
+    <div class="modal-overlay" id="modal-atmo">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Atmosphere & Sky</h2>
+          <button class="close-btn" data-close="modal-atmo">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div style="font-size:0.8rem; font-weight:700; color:var(--text-sub); text-transform:uppercase;">Presets</div>
+          <div class="grid-options" id="atmo-grid">
+            <!-- Dynamically Rendered -->
+          </div>
+
+          <div style="font-size:0.8rem; font-weight:700; color:var(--text-sub); text-transform:uppercase; margin-top:10px;">Time of Day</div>
+          <div class="grid-options" id="time-grid">
+            <div class="option-card" data-time="night">
+              <div class="icon">🌌</div>
+              <div class="title">Night</div>
+            </div>
+            <div class="option-card" data-time="midnight">
+              <div class="icon">🌑</div>
+              <div class="title">Midnight</div>
+            </div>
+            <div class="option-card" data-time="sunset">
+              <div class="icon">🌅</div>
+              <div class="title">Sunset</div>
+            </div>
+            <div class="option-card" data-time="dawn">
+              <div class="icon">🌄</div>
+              <div class="title">Dawn</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Cooking Menu -->
+    <div class="modal-overlay" id="modal-cook">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Select Food to Roast</h2>
+          <button class="close-btn" data-close="modal-cook">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="grid-options" id="food-grid">
+            <!-- Dynamically Rendered -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Recipe Journal -->
+    <div class="modal-overlay" id="modal-journal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Recipe Collection</h2>
+          <button class="close-btn" data-close="modal-journal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="grid-options" id="journal-grid">
+            <!-- Dynamically Rendered -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Settings -->
+    <div class="modal-overlay" id="modal-settings">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Settings</h2>
+          <button class="close-btn" data-close="modal-settings">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-group">
+            <div class="setting-label"><span>Master Volume</span><span id="vol-master-val">80%</span></div>
+            <input type="range" class="setting-slider" id="slider-master" min="0" max="100" value="80">
+          </div>
+          <div class="setting-group">
+            <div class="setting-label"><span>Fire Crackle Sound</span><span id="vol-fire-val">90%</span></div>
+            <input type="range" class="setting-slider" id="slider-fire" min="0" max="100" value="90">
+          </div>
+          <div class="setting-group">
+            <div class="setting-label"><span>Ambience & Weather</span><span id="vol-atmo-val">70%</span></div>
+            <input type="range" class="setting-slider" id="slider-atmo" min="0" max="100" value="70">
+          </div>
+          <div class="setting-group">
+            <div class="setting-label"><span>Particle Quality</span><span id="part-val">High</span></div>
+            <input type="range" class="setting-slider" id="slider-particles" min="1" max="3" value="3">
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <span style="font-size:0.9rem;">Reduced Motion</span>
+            <input type="checkbox" id="chk-reduced-motion" style="accent-color:var(--accent);">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: Food Result Card -->
+    <div class="modal-overlay" id="modal-result">
+      <div class="modal-card" style="max-width:360px;">
+        <div class="modal-body" id="result-card">
+          <div class="food-icon" id="res-icon">🍖</div>
+          <h3 id="res-title">Perfectly Roasted!</h3>
+          <p id="res-desc" style="font-size:0.85rem; color:var(--text-sub);">Golden, crisp, and warm to the core.</p>
+          <button class="btn-primary" id="res-eat-btn" style="width:100%; justify-content:center; margin-top:10px;">Eat Snack</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Start Overlay Screen -->
+    <div id="start-screen">
+      <h1>Campfire</h1>
+      <p>"Take a moment, pull up a log."</p>
+      <button class="btn-primary" id="start-btn" style="padding: 16px 36px; font-size: 1.1rem;">Begin Experience</button>
+    </div>
+
+  </div>
+
+  <script>
+    /* ==========================================================================
+       CAMPFIRE GAME ENGINE (VANILLA JS)
+       ========================================================================== */
+
+    // --- Sound Architecture (Web Audio API Synthesizer & Fallback Audio Loader) ---
+    // Uses procedural noise + WebAudio synthesis to guarantee ambient sound functions
+    // offline/without external assets, with fallback hooks for external URLs.
+    class CozyAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.fireGain = null;
+        this.atmoGain = null;
+        this.fireNode = null;
+        this.atmoNode = null;
+        this.volumes = { master: 0.8, fire: 0.9, atmo: 0.7 };
+        this.initialized = false;
+      }
+
+      init() {
+        if (this.initialized) return;
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.ctx = new AudioContext();
+
+        this.masterGain = this.ctx.createGain();
+        this.masterGain.gain.value = this.volumes.master;
+        this.masterGain.connect(this.ctx.destination);
+
+        this.fireGain = this.ctx.createGain();
+        this.fireGain.gain.value = this.volumes.fire;
+        this.fireGain.connect(this.masterGain);
+
+        this.atmoGain = this.ctx.createGain();
+        this.atmoGain.gain.value = this.volumes.atmo;
+        this.atmoGain.connect(this.masterGain);
+
+        this.startProceduralFireSound();
+        this.startProceduralAtmoSound('night');
+        this.initialized = true;
+      }
+
+      setMasterVolume(val) {
+        this.volumes.master = val;
+        if (this.masterGain) this.masterGain.gain.linearRampToValueAtTime(val, this.ctx.currentTime + 0.1);
+      }
+      setFireVolume(val) {
+        this.volumes.fire = val;
+        if (this.fireGain) this.fireGain.gain.linearRampToValueAtTime(val, this.ctx.currentTime + 0.1);
+      }
+      setAtmoVolume(val) {
+        this.volumes.atmo = val;
+        if (this.atmoGain) this.atmoGain.gain.linearRampToValueAtTime(val, this.ctx.currentTime + 0.1);
+      }
+
+      // Synthesize realistic Fire Crackle Noise
+      startProceduralFireSound() {
+        const bufferSize = this.ctx.sampleRate * 2;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+        noise.loop = true;
+
+        // Bandpass filter for low warmth rumble
+        const bandpass = this.ctx.createBiquadFilter();
+        bandpass.type = 'bandpass';
+        bandpass.frequency.value = 400;
+        bandpass.Q.value = 1.5;
+
+        noise.connect(bandpass);
+        bandpass.connect(this.fireGain);
+        noise.start();
+
+        // Random pops & crackles
+        setInterval(() => {
+          if (!this.initialized || this.volumes.fire <= 0) return;
+          if (Math.random() < 0.4) {
+            const pop = this.ctx.createBufferSource();
+            const popBuffer = this.ctx.createBuffer(1, this.ctx.sampleRate * 0.05, this.ctx.sampleRate);
+            const popData = popBuffer.getChannelData(0);
+            for (let i = 0; i < popData.length; i++) {
+              popData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (this.ctx.sampleRate * 0.005));
+            }
+            pop.buffer = popBuffer;
+            const popFilter = this.ctx.createBiquadFilter();
+            popFilter.type = 'highpass';
+            popFilter.frequency.value = 800 + Math.random() * 2000;
+            pop.connect(popFilter);
+            popFilter.connect(this.fireGain);
+            pop.start();
+          }
+        }, 250);
+      }
+
+      // Synthesize Ambient Backgrounds (Wind / Night / Rain)
+      startProceduralAtmoSound(type) {
+        if (this.atmoNode) {
+          try { this.atmoNode.stop(); } catch(e){}
+        }
+
+        const bufferSize = this.ctx.sampleRate * 3;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        let lastOut = 0.0;
+
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          data[i] = (lastOut + (0.02 * white)) / 1.02; // Pink-ish noise filter
+          lastOut = data[i];
+        }
+
+        this.atmoNode = this.ctx.createBufferSource();
+        this.atmoNode.buffer = buffer;
+        this.atmoNode.loop = true;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = (type === 'rain') ? 1200 : (type === 'snow' ? 300 : 600);
+
+        this.atmoNode.connect(filter);
+        filter.connect(this.atmoGain);
+        this.atmoNode.start();
+      }
+
+      playStokeSound() {
+        if (!this.initialized) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.5 * this.volumes.master, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.3);
+      }
+    }
+
+    // --- Game Data & State ---
+    const FOOD_TYPES = [
+      { id: 'marshmallow', name: 'Marshmallow', icon: '🍖', time: 8 },
+      { id: 'sausage', name: 'Sausage', icon: '🌭', time: 12 },
+      { id: 'potato', name: 'Potato', icon: '🥔', time: 18 },
+      { id: 'apple', name: 'Apple', icon: '🍎', time: 10 },
+      { id: 'bread', name: 'Bread', icon: '🍞', time: 7 },
+      { id: 'smore', name: 'S\'more', icon: '🍫', time: 9 }
+    ];
+
+    const ATMOSPHERES = [
+      { id: 'night', name: 'Quiet Night', icon: '🌙', desc: 'Calm stars & gentle crickets.' },
+      { id: 'rain', name: 'Rainy Evening', icon: '🌧', desc: 'Relaxing rainfall ambience.' },
+      { id: 'snow', name: 'Snowy Night', icon: '❄️', desc: 'Soft falling snow & winter winds.' },
+      { id: 'starry', name: 'Starry Sky', icon: '🌌', desc: 'Clear sky filled with twinkling stars.' },
+      { id: 'misty', name: 'Misty Forest', icon: '🌫', desc: 'Ethereal rolling fog.' },
+      { id: 'magic', name: 'Magical Night', icon: '✨', desc: 'Glowing fireflies and enchantment.' }
+    ];
+
+    const state = {
+      fireStrength: 75,
+      woodSupply: 60,
+      atmosphere: 'night',
+      timeOfDay: 'night',
+      lanternOn: true,
+      qualityPreset: 3,
+      reducedMotion: false,
+      cooking: {
+        active: false,
+        food: null,
+        progress: 0,
+        heatDistance: 2, // 1: close, 2: perfect, 3: far
+        rotation: 0,
+        status: 'Raw'
+      },
+      unlockedRecipes: new Set(['marshmallow'])
+    };
+
+    const audio = new CozyAudioEngine();
+
+    // --- Canvas Graphics System ---
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    const fxCanvas = document.getElementById('fx-canvas');
+    const fxCtx = fxCanvas.getContext('2d');
+
+    let width, height;
+    let particles = [];
+    let stars = [];
+    let fireflies = [];
+    let weatherParticles = [];
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      bgCanvas.width = width;
+      bgCanvas.height = height;
+      fxCanvas.width = width;
+      fxCanvas.height = height;
+      initStars();
+      initFireflies();
+    }
+
+    function initStars() {
+      stars = [];
+      const count = Math.floor((width * height) / 3000);
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * (height * 0.65),
+          size: Math.random() * 1.8 + 0.5,
+          alpha: Math.random(),
+          speed: Math.random() * 0.02 + 0.005
+        });
+      }
+    }
+
+    function initFireflies() {
+      fireflies = [];
+      for (let i = 0; i < 25; i++) {
+        fireflies.push({
+          x: Math.random() * width,
+          y: height * 0.4 + Math.random() * (height * 0.4),
+          vx: (Math.random() - 0.5) * 0.8,
+          vy: (Math.random() - 0.5) * 0.8,
+          alpha: Math.random(),
+          size: Math.random() * 2.5 + 1
+        });
+      }
+    }
+
+    function spawnSparks(amount) {
+      const centerX = width / 2;
+      const centerY = height * 0.72;
+      for (let i = 0; i < amount; i++) {
+        particles.push({
+          x: centerX + (Math.random() - 0.5) * 40,
+          y: centerY,
+          vx: (Math.random() - 0.5) * 2.5,
+          vy: -Math.random() * 3.5 - 1.5,
+          size: Math.random() * 2.5 + 1,
+          life: 1,
+          decay: Math.random() * 0.02 + 0.015,
+          color: Math.random() > 0.3 ? '#ffb834' : '#ff4500'
+        });
+      }
+    }
+
+    function spawnWeatherParticle() {
+      if (state.atmosphere === 'rain') {
+        weatherParticles.push({
+          x: Math.random() * width,
+          y: -10,
+          vy: Math.random() * 8 + 10,
+          vx: -1,
+          length: Math.random() * 15 + 10,
+          alpha: Math.random() * 0.4 + 0.2
+        });
+      } else if (state.atmosphere === 'snow') {
+        weatherParticles.push({
+          x: Math.random() * width,
+          y: -10,
+          vy: Math.random() * 1.5 + 1,
+          vx: Math.sin(Date.now() * 0.001) * 0.8,
+          size: Math.random() * 3 + 1,
+          alpha: Math.random() * 0.6 + 0.4
+        });
+      }
+    }
+
+    // --- Render Pipeline ---
+    function renderScene() {
+      // 1. Sky & Background Gradients
+      bgCtx.clearRect(0, 0, width, height);
+
+      let skyGrad = bgCtx.createLinearGradient(0, 0, 0, height);
+      if (state.timeOfDay === 'sunset') {
+        skyGrad.addColorStop(0, '#1a0b2e');
+        skyGrad.addColorStop(0.4, '#4a154b');
+        skyGrad.addColorStop(0.7, '#8c2f39');
+        skyGrad.addColorStop(1, '#e65c40');
+      } else if (state.timeOfDay === 'dawn') {
+        skyGrad.addColorStop(0, '#0b1d3a');
+        skyGrad.addColorStop(0.5, '#234360');
+        skyGrad.addColorStop(0.8, '#62727b');
+        skyGrad.addColorStop(1, '#d4a373');
+      } else if (state.timeOfDay === 'midnight') {
+        skyGrad.addColorStop(0, '#020307');
+        skyGrad.addColorStop(1, '#070c18');
+      } else { // Night
+        skyGrad.addColorStop(0, '#050914');
+        skyGrad.addColorStop(0.6, '#0d1527');
+        skyGrad.addColorStop(1, '#18233c');
+      }
+      bgCtx.fillStyle = skyGrad;
+      bgCtx.fillRect(0, 0, width, height);
+
+      // 2. Stars Render
+      bgCtx.fillStyle = '#ffffff';
+      stars.forEach(star => {
+        star.alpha += star.speed;
+        if (star.alpha > 1 || star.alpha < 0) star.speed = -star.speed;
+        bgCtx.globalAlpha = Math.max(0, Math.min(1, star.alpha));
+        bgCtx.beginPath();
+        bgCtx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+        bgCtx.fill();
+      });
+      bgCtx.globalAlpha = 1;
+
+      // 3. Mountains & Forest Silhouettes
+      const bgTreeColor = state.timeOfDay === 'sunset' ? '#210b1a' : '#060b14';
+      const fgTreeColor = state.timeOfDay === 'sunset' ? '#12050e' : '#03050a';
+
+      // Background Mountains
+      bgCtx.fillStyle = bgTreeColor;
+      bgCtx.beginPath();
+      bgCtx.moveTo(0, height * 0.65);
+      bgCtx.lineTo(width * 0.2, height * 0.52);
+      bgCtx.lineTo(width * 0.5, height * 0.62);
+      bgCtx.lineTo(width * 0.8, height * 0.48);
+      bgCtx.lineTo(width, height * 0.65);
+      bgCtx.lineTo(width, height);
+      bgCtx.lineTo(0, height);
+      bgCtx.fill();
+
+      // Dense Tree Line
+      bgCtx.fillStyle = fgTreeColor;
+      bgCtx.beginPath();
+      const treeWidth = 35;
+      for (let x = 0; x < width + treeWidth; x += treeWidth) {
+        const treeH = height * 0.55 + Math.sin(x * 0.05) * 30;
+        bgCtx.lineTo(x, height * 0.7);
+        bgCtx.lineTo(x + treeWidth / 2, treeH);
+      }
+      bgCtx.lineTo(width, height);
+      bgCtx.lineTo(0, height);
+      bgCtx.fill();
+
+      // Ground clearing
+      const groundGrad = bgCtx.createLinearGradient(0, height * 0.68, 0, height);
+      groundGrad.addColorStop(0, '#101726');
+      groundGrad.addColorStop(1, '#070a12');
+      bgCtx.fillStyle = groundGrad;
+      bgCtx.fillRect(0, height * 0.68, width, height * 0.32);
+
+      // 4. Dynamic Campfire & FX Loop
+      fxCtx.clearRect(0, 0, width, height);
+
+      const fireCenterX = width / 2;
+      const fireCenterY = height * 0.73;
+      const intensityScale = (state.fireStrength / 100) * 0.4 + 0.8;
+
+      // Fire Stones
+      fxCtx.fillStyle = '#252a34';
+      for (let i = 0; i < 8; i++) {
+        const angle = (i / 8) * Math.PI * 2;
+        const sx = fireCenterX + Math.cos(angle) * 45;
+        const sy = fireCenterY + Math.sin(angle) * 20 + 10;
+        fxCtx.beginPath();
+        fxCtx.ellipse(sx, sy, 12, 8, 0, 0, Math.PI * 2);
+        fxCtx.fill();
+      }
+
+      // Wooden Logs
+      fxCtx.fillStyle = '#4a2e1b';
+      fxCtx.save();
+      fxCtx.translate(fireCenterX, fireCenterY + 5);
+      fxCtx.rotate(-0.25);
+      fxCtx.fillRect(-35, -6, 70, 12);
+      fxCtx.rotate(0.5);
+      fxCtx.fillRect(-35, -6, 70, 12);
+      fxCtx.restore();
+
+      // Animated Flames (Layered SVG-like curves)
+      if (state.fireStrength > 5) {
+        const time = Date.now() * 0.005;
+
+        // Outer Orange Flame
+        fxCtx.fillStyle = 'rgba(255, 90, 0, 0.85)';
+        fxCtx.beginPath();
+        fxCtx.moveTo(fireCenterX - 30 * intensityScale, fireCenterY);
+        fxCtx.quadraticCurveTo(
+          fireCenterX + Math.sin(time) * 15,
+          fireCenterY - 90 * intensityScale,
+          fireCenterX,
+          fireCenterY - 110 * intensityScale
+        );
+        fxCtx.quadraticCurveTo(
+          fireCenterX + Math.cos(time * 1.2) * 15,
+          fireCenterY - 80 * intensityScale,
+          fireCenterX + 30 * intensityScale,
+          fireCenterY
+        );
+        fxCtx.fill();
+
+        // Inner Yellow Flame Core
+        fxCtx.fillStyle = 'rgba(255, 210, 50, 0.95)';
+        fxCtx.beginPath();
+        fxCtx.moveTo(fireCenterX - 18 * intensityScale, fireCenterY);
+        fxCtx.quadraticCurveTo(
+          fireCenterX + Math.cos(time * 1.5) * 8,
+          fireCenterY - 60 * intensityScale,
+          fireCenterX,
+          fireCenterY - 75 * intensityScale
+        );
+        fxCtx.quadraticCurveTo(
+          fireCenterX + Math.sin(time * 1.3) * 8,
+          fireCenterY - 50 * intensityScale,
+          fireCenterX + 18 * intensityScale,
+          fireCenterY
+        );
+        fxCtx.fill();
+      }
+
+      // 5. Update & Render Sparks/Particles
+      if (!state.reducedMotion && Math.random() < (state.fireStrength / 100) * 0.7) {
+        spawnSparks(1);
+      }
+
+      particles.forEach((p, index) => {
+        p.x += p.vx + Math.sin(Date.now() * 0.002) * 0.5;
+        p.y += p.vy;
+        p.life -= p.decay;
+
+        if (p.life <= 0) {
+          particles.splice(index, 1);
+        } else {
+          fxCtx.fillStyle = p.color;
+          fxCtx.globalAlpha = p.life;
+          fxCtx.beginPath();
+          fxCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          fxCtx.fill();
+        }
+      });
+      fxCtx.globalAlpha = 1;
+
+      // 6. Atmosphere & Weather Effects
+      if (state.atmosphere === 'magic') {
+        fireflies.forEach(ff => {
+          ff.x += ff.vx;
+          ff.y += ff.vy;
+          if (ff.x < 0 || ff.x > width) ff.vx *= -1;
+          if (ff.y < height * 0.3 || ff.y > height * 0.85) ff.vy *= -1;
+          fxCtx.fillStyle = '#b5ff42';
+          fxCtx.globalAlpha = Math.abs(Math.sin(Date.now() * 0.002 + ff.x));
+          fxCtx.beginPath();
+          fxCtx.arc(ff.x, ff.y, ff.size, 0, Math.PI * 2);
+          fxCtx.fill();
+        });
+        fxCtx.globalAlpha = 1;
+      }
+
+      // Weather Particles (Rain/Snow)
+      if (Math.random() < 0.6) spawnWeatherParticle();
+      weatherParticles.forEach((wp, index) => {
+        wp.y += wp.vy;
+        wp.x += wp.vx;
+        if (wp.y > height) {
+          weatherParticles.splice(index, 1);
+        } else {
+          fxCtx.globalAlpha = wp.alpha;
+          if (state.atmosphere === 'rain') {
+            fxCtx.strokeStyle = '#a5c4d4';
+            fxCtx.lineWidth = 1.2;
+            fxCtx.beginPath();
+            fxCtx.moveTo(wp.x, wp.y);
+            fxCtx.lineTo(wp.x + wp.vx, wp.y + wp.length);
+            fxCtx.stroke();
+          } else if (state.atmosphere === 'snow') {
+            fxCtx.fillStyle = '#ffffff';
+            fxCtx.beginPath();
+            fxCtx.arc(wp.x, wp.y, wp.size, 0, Math.PI * 2);
+            fxCtx.fill();
+          }
+        }
+      });
+      fxCtx.globalAlpha = 1;
+
+      // 7. Fire decay mechanics
+      state.fireStrength = Math.max(0, state.fireStrength - 0.008);
+      state.woodSupply = Math.max(0, state.woodSupply - 0.004);
+
+      updateUIHUD();
+      requestAnimationFrame(renderScene);
+    }
+
+    // --- UI Update Helper ---
+    function updateUIHUD() {
+      document.getElementById('fire-val').textContent = `${Math.round(state.fireStrength)}%`;
+      document.getElementById('fire-fill').style.width = `${state.fireStrength}%`;
+      document.getElementById('wood-val').textContent = `${Math.round(state.woodSupply)}%`;
+      document.getElementById('wood-fill').style.width = `${state.woodSupply}%`;
+
+      // Update Screen Glow intensity variable
+      const glowElem = document.getElementById('scene-glow');
+      glowElem.style.setProperty('--fire-intensity', (state.fireStrength / 100).toFixed(2));
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast-msg');
+      toast.textContent = msg;
+      toast.classList.add('visible');
+      clearTimeout(toast.timer);
+      toast.timer = setTimeout(() => toast.classList.remove('visible'), 3000);
+    }
+
+    // --- Actions & Gameplay Interactions ---
+    function stokeFire() {
+      state.fireStrength = Math.min(100, state.fireStrength + 15);
+      spawnSparks(25);
+      audio.playStokeSound();
+      showToast("The fire crackles brightly as you stoke the embers.");
+    }
+
+    function addWood() {
+      if (state.woodSupply <= 0) {
+        showToast("You're out of wood! Wait a moment to gather more.");
+        return;
+      }
+      state.woodSupply = Math.max(0, state.woodSupply - 15);
+      state.fireStrength = Math.min(100, state.fireStrength + 25);
+      spawnSparks(40);
+      audio.playStokeSound();
+      showToast("You place a dry log on the fire.");
+    }
+
+    // Passive wood regeneration over time
+    setInterval(() => {
+      if (state.woodSupply < 100) {
+        state.woodSupply = Math.min(100, state.woodSupply + 5);
+      }
+    }, 12000);
+
+    // --- Cooking Subsystem ---
+    function startCooking(foodObj) {
+      state.cooking = {
+        active: true,
+        food: foodObj,
+        progress: 0,
+        heatDistance: 2,
+        rotation: 0,
+        status: 'Raw'
+      };
+      closeAllModals();
+
+      document.getElementById('cook-food-name').textContent = foodObj.name;
+      document.getElementById('food-on-stick').textContent = foodObj.icon;
+      document.getElementById('cooking-hud').classList.add('active');
+
+      const stickContainer = document.getElementById('roasting-stick-container');
+      stickContainer.classList.add('active');
+      updateStickPosition();
+
+      // Cooking loop timer
+      if (state.cookingInterval) clearInterval(state.cookingInterval);
+      state.cookingInterval = setInterval(updateCookingProgress, 500);
+    }
+
+    function updateStickPosition() {
+      const stick = document.getElementById('roasting-stick-container');
+      const graphic = document.getElementById('food-on-stick');
+
+      // Adjust scale & position based on heat distance
+      const dist = state.cooking.heatDistance; // 1: Close, 2: Perfect, 3: Far
+      const translateY = dist === 1 ? -60 : (dist === 2 ? -20 : 20);
+      stick.style.transform = `translate(-50%, ${translateY}px)`;
+      graphic.style.transform = `rotate(${state.cooking.rotation}deg)`;
+    }
+
+    function updateCookingProgress() {
+      if (!state.cooking.active) return;
+
+      const c = state.cooking;
+      // Calculate heat modifier
+      let heatMult = c.heatDistance === 2 ? 1 : (c.heatDistance === 1 ? 1.8 : 0.4);
+      c.progress += (100 / (c.food.time * 2)) * heatMult;
+
+      const fill = document.getElementById('cook-progress-fill');
+      fill.style.width = `${Math.min(100, c.progress)}%`;
+
+      const foodGraphic = document.getElementById('food-on-stick');
+
+      if (c.progress < 30) {
+        c.status = 'Warm';
+        foodGraphic.style.filter = 'drop-shadow(0 2px 5px rgba(0,0,0,0.4))';
+      } else if (c.progress < 75) {
+        c.status = 'Golden';
+        fill.style.background = 'linear-gradient(90deg, #f8b500, #fceabb)';
+        foodGraphic.style.filter = 'sepia(0.6) saturate(1.4) drop-shadow(0 4px 10px rgba(255,160,0,0.5))';
+      } else if (c.progress <= 100) {
+        c.status = 'Perfectly Roasted';
+        fill.style.background = 'linear-gradient(90deg, #ff9d42, #ff5e36)';
+        foodGraphic.style.filter = 'sepia(0.8) contrast(1.2) brightness(0.9)';
+      } else {
+        c.status = 'Burnt';
+        fill.style.background = '#2c2c2c';
+        foodGraphic.style.filter = 'brightness(0.2) grayscale(1)';
+      }
+
+      document.getElementById('cook-status-text').textContent = `Status: ${c.status}`;
+    }
+
+    function finishCooking() {
+      if (!state.cooking.active) return;
+
+      clearInterval(state.cookingInterval);
+      state.cooking.active = false;
+
+      document.getElementById('cooking-hud').classList.remove('active');
+      document.getElementById('roasting-stick-container').classList.remove('active');
+
+      const food = state.cooking.food;
+      const status = state.cooking.status;
+      state.unlockedRecipes.add(food.id);
+
+      // Show Result Card Modal
+      document.getElementById('res-icon').textContent = food.icon;
+      document.getElementById('res-title').textContent = `${food.name} — ${status}`;
+      document.getElementById('res-desc').textContent = status === 'Burnt'
+        ? 'A bit crispier than intended, but cooked over an open flame nonetheless!'
+        : 'Perfectly warm and delicious. The ideal campsite snack.';
+
+      openModal('modal-result');
+      renderRecipeJournal();
+    }
+
+    // --- Modal Control & Dynamic Rendering ---
+    function openModal(id) {
+      document.getElementById(id).classList.add('open');
+    }
+
+    function closeAllModals() {
+      document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+    }
+
+    function renderAtmospheres() {
+      const grid = document.getElementById('atmo-grid');
+      grid.innerHTML = '';
+      ATMOSPHERES.forEach(a => {
+        const card = document.createElement('div');
+        card.className = `option-card ${state.atmosphere === a.id ? 'selected' : ''}`;
+        card.innerHTML = `
+          <div class="icon">${a.icon}</div>
+          <div class="title">${a.name}</div>
+          <div class="sub">${a.desc}</div>
+        `;
+        card.onclick = () => {
+          state.atmosphere = a.id;
+          audio.startProceduralAtmoSound(a.id);
+          renderAtmospheres();
+          showToast(`Atmosphere changed to ${a.name}`);
+        };
+        grid.appendChild(card);
+      });
+    }
+
+    function renderFoodSelection() {
+      const grid = document.getElementById('food-grid');
+      grid.innerHTML = '';
+      FOOD_TYPES.forEach(f => {
+        const card = document.createElement('div');
+        card.className = 'option-card';
+        card.innerHTML = `
+          <div class="icon">${f.icon}</div>
+          <div class="title">${f.name}</div>
+          <div class="sub">~${f.time}s roast</div>
+        `;
+        card.onclick = () => startCooking(f);
+        grid.appendChild(card);
+      });
+    }
+
+    function renderRecipeJournal() {
+      const grid = document.getElementById('journal-grid');
+      grid.innerHTML = '';
+      FOOD_TYPES.forEach(f => {
+        const unlocked = state.unlockedRecipes.has(f.id);
+        const card = document.createElement('div');
+        card.className = 'option-card';
+        card.style.opacity = unlocked ? '1' : '0.4';
+        card.innerHTML = `
+          <div class="icon">${unlocked ? f.icon : '❓'}</div>
+          <div class="title">${unlocked ? f.name : '???'}</div>
+          <div class="sub">${unlocked ? 'Unlocked' : 'Not yet roasted'}</div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // --- Event Listeners & Binding ---
+    function setupEventListeners() {
+      // Start Overlay Button
+      document.getElementById('start-btn').onclick = () => {
+        audio.init();
+        document.getElementById('start-screen').classList.add('hidden');
+        showToast("Welcome to your campsite.");
+      };
+
+      // Modal Triggers
+      document.getElementById('btn-stoke').onclick = stokeFire;
+      document.getElementById('btn-addwood').onclick = addWood;
+      document.getElementById('btn-cook').onclick = () => { renderFoodSelection(); openModal('modal-cook'); };
+      document.getElementById('btn-atmo').onclick = () => { renderAtmospheres(); openModal('modal-atmo'); };
+      document.getElementById('btn-journal').onclick = () => { renderRecipeJournal(); openModal('modal-journal'); };
+      document.getElementById('settings-btn').onclick = () => openModal('modal-settings');
+
+      // Modal Close Buttons
+      document.querySelectorAll('[data-close]').forEach(btn => {
+        btn.onclick = () => document.getElementById(btn.dataset.close).classList.remove('open');
+      });
+
+      // Time of Day selector buttons
+      document.querySelectorAll('#time-grid .option-card').forEach(card => {
+        card.onclick = () => {
+          document.querySelectorAll('#time-grid .option-card').forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          state.timeOfDay = card.dataset.time;
+          showToast(`Sky updated to ${card.dataset.time}`);
+        };
+      });
+
+      // Interactive Props
+      document.getElementById('lantern-prop').onclick = () => {
+        state.lanternOn = !state.lanternOn;
+        document.getElementById('lantern-glass').style.fill = state.lanternOn ? 'rgba(255, 220, 130, 0.8)' : 'rgba(100, 100, 100, 0.3)';
+        document.getElementById('lantern-bulb').style.fill = state.lanternOn ? '#ffb834' : '#444';
+        showToast(state.lanternOn ? 'Lantern turned on.' : 'Lantern turned off.');
+      };
+
+      document.getElementById('mug-prop').onclick = () => showToast("You wrap your hands around the warm mug.");
+      document.getElementById('blanket-prop').onclick = () => showToast("You pull the blanket closer against the evening chill.");
+
+      // Cooking Controls
+      document.getElementById('cook-near-btn').onclick = () => { state.cooking.heatDistance = 1; updateStickPosition(); };
+      document.getElementById('cook-far-btn').onclick = () => { state.cooking.heatDistance = 3; updateStickPosition(); };
+      document.getElementById('cook-rotate-btn').onclick = () => { state.cooking.rotation += 90; updateStickPosition(); };
+      document.getElementById('cook-done-btn').onclick = finishCooking;
+
+      document.getElementById('res-eat-btn').onclick = () => {
+        closeAllModals();
+        showToast("You enjoyed your warm campfire snack!");
+      };
+
+      // Audio Settings Sliders
+      document.getElementById('slider-master').oninput = (e) => {
+        audio.setMasterVolume(e.target.value / 100);
+        document.getElementById('vol-master-val').textContent = `${e.target.value}%`;
+      };
+      document.getElementById('slider-fire').oninput = (e) => {
+        audio.setFireVolume(e.target.value / 100);
+        document.getElementById('vol-fire-val').textContent = `${e.target.value}%`;
+      };
+      document.getElementById('slider-atmo').oninput = (e) => {
+        audio.setAtmoVolume(e.target.value / 100);
+        document.getElementById('vol-atmo-val').textContent = `${e.target.value}%`;
+      };
+      document.getElementById('chk-reduced-motion').onchange = (e) => {
+        state.reducedMotion = e.target.checked;
+      };
+
+      // Keyboard Shortcuts
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAllModals();
+        if (e.key.toLowerCase() === 'f') stokeFire();
+        if (e.key.toLowerCase() === 'w') addWood();
+        if (e.key.toLowerCase() === 'c') { renderFoodSelection(); openModal('modal-cook'); }
+        if (e.key.toLowerCase() === 'a') { renderAtmospheres(); openModal('modal-atmo'); }
+      });
+
+      window.addEventListener('resize', resizeCanvas);
+    }
+
+    // --- Initialization ---
+    window.onload = () => {
+      resizeCanvas();
+      setupEventListeners();
+      requestAnimationFrame(renderScene);
+    };
+  </script>
+</body>
+</html>
